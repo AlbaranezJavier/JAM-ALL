@@ -10,21 +10,21 @@ This script executes the training of the network.
 
 if __name__ == '__main__':
     # Data Variables
-    inputs_rgb = [r'C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\First_micrscope_all']
-    original_size = (2988, 5312)
-    # inputs_rgb = [r'C:\Users\TTe_J\Downloads\17-17-05']
+    inputs_rgb = [r'C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\First_microscope_all_320x180']
+    input_type = "png" # jpg, png, bmp
+    # original_size = (2988, 5312)
+    original_size = (180, 320)
     # labels_class = ["b", "y", "o_s", "o_b"]
     labels_class = ["binary"]
     # label_size = (720, 1280, len(labels_class))
     label_size = (180, 320, len(labels_class))
     background = True
-    # label_size = (513, 1025, len(labels))
     batch_size = 8
     valid_size = .10
     labels_type = "json" # jpg or json
     output_type = "cls"  # regression = reg, classification = cls, regression + classficiation = reg+cls
 
-    dm = DataManager(inputs_rgb, original_size, labels_class, label_size, background, valid_size, batch_size,
+    dm = DataManager(inputs_rgb, input_type, original_size, labels_class, label_size, background, valid_size, batch_size,
                      labels_type, output_type)
 
     # Net Variables

@@ -12,13 +12,14 @@ class DataManager():
     This class contains all the functionality necessary to control the input/output data to the network.
     """
 
-    def __init__(self, rgb_path, original_size, labels, label_size, background, valid_size, batch_size, input_type,
+    def __init__(self, rgb_path, input_type, original_size, labels, label_size, background, valid_size, batch_size, labels_type,
                  output_type, seed=123, shuffle=True):
         # Managing directories
         self._constants()
         self.original_size = original_size
+        self.input_type = input_type
         self.output_type = output_type
-        self.labels_type = input_type
+        self.labels_type = labels_type
         self.rgb_paths, self.gt_paths = self._getpaths(rgb_path)
         _X_train, _X_valid, _Y_train, _Y_valid = train_test_split(self.rgb_paths, self.gt_paths,
                                                                   test_size=valid_size,
@@ -65,7 +66,7 @@ class DataManager():
             for json_path in paths:
                 labels.append(json_path)
                 img_name = json_path.split("\\")[-1][:-5]
-                imgs.append(imgs_path[i]+self.IMGS+img_name+".jpg")
+                imgs.append(imgs_path[i]+self.IMGS+img_name+"."+self.input_type)
         return np.array(imgs), np.array(labels)
 
     # Management of image batches
@@ -80,8 +81,9 @@ class DataManager():
         x = []
         for path in self.X[step][self.batches[step][idx]:self.batches[step][idx + 1]]:
             _img = cv2.imread(path)
-            _img = cv2.rotate(_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            _img = cv2.resize(_img, (self.label_size[1], self.label_size[0]))
+            if self.original_size != self.label_size[0:2]:
+                _img = cv2.rotate(_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                _img = cv2.resize(_img, (self.label_size[1], self.label_size[0]))
             _img = cv2.cvtColor(_img, color_space).astype('float32') if color_space is not None else _img.astype(
                 'float32')
             _img /= 255.
@@ -114,7 +116,8 @@ class DataManager():
                 y2 = int(data[self.CELL+str(i)]["y2"])
                 mask[y1:y2, x1:x2, 0] = 1.
                 mask[:, :, 1] = ((mask[:, :, 0] == 0)*1.).astype("float32")
-            mask = cv2.resize(mask, (self.label_size[1], self.label_size[0]), cv2.INTER_NEAREST)
+            if self.original_size != self.label_size[0:2]:
+                mask = cv2.resize(mask, (self.label_size[1], self.label_size[0]), cv2.INTER_NEAREST)
             return mask
         else:
             pass

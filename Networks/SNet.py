@@ -547,7 +547,7 @@ def SNet_3L(inputs, batch, output_type, learn_reg=1e-2):
         return n3Ld_reg, n3Ld_cls
     else:
         n3Ld = Conv2D_NA(k_dim=5, output_channel=32, stride=1, padding="SAME", k_reg=l2)(n3Ld)
-        n3Ld = Conv2D(filters=5, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation="softmax")(n3Ld)
+        n3Ld = Conv2D(filters=2, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation="softmax")(n3Ld)
     return n3Ld
 
 def SNet_3L_plusplus(inputs, batch, output_type, learn_reg=1e-2):

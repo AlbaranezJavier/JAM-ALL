@@ -37,19 +37,21 @@ if __name__ == '__main__':
     csv_file = r'C:\Users\TTe_J\Downloads\csv_javi_formzero_fixed_archive.csv'
 
     # Data Variables
-    inputs_rgb = [r'C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\First_micrscope_all']
-    original_size = (2988, 5312)
+    inputs_rgb = [r'C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\First_micrscope_all_320x180']
+    input_type = "png" # png, jpg
+    # original_size = (2988, 5312)
+    original_size = (180, 320)
     # inputs_rgb = [r'C:\Users\TTe_J\Downloads\17-17-05']
     labels_class = ["binary"]
-    input_type = "json" # mask or json
+    label_type = "json" # mask or json
     # labels = ["b", "y", "o_s", "o_b"]
     label_size = (input_dims[1], input_dims[2], len(labels_class))
     background = True
     batch_size = 8
     valid_size = .10
 
-    dm = DataManager(inputs_rgb, original_size, labels_class, label_size, background, valid_size, batch_size,
-                     input_type, output_type)
+    dm = DataManager(inputs_rgb, input_type, original_size, labels_class, label_size, background, valid_size, batch_size,
+                     label_type, output_type)
     im = InferenceModel(model, input_dims, weights_path, start_epoch, output_type, inference_type, original_size,
                         min_area, neighbours)
 
