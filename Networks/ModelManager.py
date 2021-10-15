@@ -5,6 +5,7 @@ from tensorflow.keras.optimizers import RMSprop
 from tensorflow.keras.losses import CategoricalCrossentropy, BinaryCrossentropy, MeanAbsoluteError, MeanSquaredError
 from tensorflow.keras.metrics import CategoricalAccuracy, BinaryAccuracy, Accuracy
 from Networks.SNet import *
+from Networks.CNet import *
 from Networks.HNet import *
 from Networks.MgNet import *
 from Networks.UNetplusplus import *
@@ -65,6 +66,10 @@ class ModelManager:
             self.nn = Model(inputs, Net_4(inputs, self.dim[0], learn_reg))
         elif self.model == "SNet_3L":
             self.nn = Model(inputs, SNet_3L(inputs, self.dim[0], self.output_type, learn_reg))
+        elif self.model == "CNet_3L":
+            self.nn = Model(inputs, CNet_3L(inputs, learn_reg))
+        elif self.model == "CDNet_3L":
+            self.nn = Model(inputs, CDNet_3L(inputs, learn_reg))
         elif self.model == "SNet_3L_plusplus":
             self.nn = Model(inputs, SNet_3L_plusplus(inputs, self.dim[0], self.output_type, learn_reg))
         elif self.model == "SNet_3L_p":

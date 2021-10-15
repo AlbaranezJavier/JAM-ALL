@@ -214,11 +214,11 @@ class InferenceStats():
         if not from_csv:
             for _lab in range(self.dm.label_size[2]):
                 stats[_lab].cal_complex_stats("cumulative")
-                acc += f'{stats[_lab].stats["accuracy"]} ({self.dm.labels_class[_lab]}), '
-                iou += f'{stats[_lab].stats["iou"]} ({self.dm.labels_class[_lab]}), '
-                prec += f'{stats[_lab].stats["precision"]} ({self.dm.labels_class[_lab]}), '
-                rec += f'{stats[_lab].stats["recall"]} ({self.dm.labels_class[_lab]}), '
-                f1 += f'{stats[_lab].stats["f1"]} ({self.dm.labels_class[_lab]}), '
+                acc += f'{stats[_lab].stats["accuracy"]} ({self.dm.labels[_lab]}), '
+                iou += f'{stats[_lab].stats["iou"]} ({self.dm.labels[_lab]}), '
+                prec += f'{stats[_lab].stats["precision"]} ({self.dm.labels[_lab]}), '
+                rec += f'{stats[_lab].stats["recall"]} ({self.dm.labels[_lab]}), '
+                f1 += f'{stats[_lab].stats["f1"]} ({self.dm.labels[_lab]}), '
             stats[self.dm.label_size[2]].cal_complex_stats("cumulative")
             acc += f'{stats[self.dm.label_size[2]].stats["accuracy"]} (all) %'
             iou += f'{stats[self.dm.label_size[2]].stats["iou"]} (all) %'

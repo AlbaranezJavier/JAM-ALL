@@ -10,14 +10,14 @@ This script executes the training of the network.
 
 if __name__ == '__main__':
     # Data Variables
-    inputs_rgb = [r'C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\First_microscope_all_320x180']
+    inputs_rgb = [r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\cropped_v2"]
     input_type = "png" # jpg, png, bmp
     # original_size = (2988, 5312)
-    original_size = (180, 320)
+    original_size = (575, 575)
     # labels_class = ["b", "y", "o_s", "o_b"]
-    labels_class = ["binary"]
+    labels_class = ["classes_dense"] # ["binary"] or ["classes_cnn"] or ["classes_dense]
     # label_size = (720, 1280, len(labels_class))
-    label_size = (180, 320, len(labels_class))
+    label_size = (512, 512, len(labels_class))
     background = True
     batch_size = 8
     valid_size = .10
@@ -28,16 +28,16 @@ if __name__ == '__main__':
                      labels_type, output_type)
 
     # Net Variables
-    model = "SNet_3L"     # models = HelperNetV1, ..V2, ..V3, SNet_5L2, .._4L, .._3L, .._3L_plusplus, .._3Lite, .._4,
-                            # .._5, .._6, MgNet_0, UNetplusplus_3L, .._3L_p
+    model = "CDNet_3L"     # models = HelperNetV1, ..V2, ..V3, SNet_5L2, .._4L, .._3L, .._3L_plusplus, .._3Lite, .._4,
+                          # .._5, .._6, MgNet_0, UNetplusplus_3L, .._3L_p, CNet_3L
     start_epoch = 0  # <= number epoch trained
-    id_copy = "_cls_yuv"  # <= logs version? "" => main
-    color_space = 82  # <= bgr=None, lab=44, yuv=82, hsv=40, hsl=52
+    id_copy = "_dense_cls_lab"  # <= logs version? "" => main
+    color_space = 44  # <= bgr=None, lab=44, yuv=82, hsv=40, hsl=52
     end_epoch = start_epoch + 100
-    learn_opt, learn_reg = 1e-4, 1e-2
+    learn_opt, learn_reg = 1e-3, 1e-2
     save_weights = True
     min_acc = 99.75
-    specific_weights = "synthetic_real" + id_copy
+    specific_weights = "real" + id_copy
     weights_path = f'Weights/{model}/{specific_weights}_epoch'
     input_dims = (batch_size, label_size[0], label_size[1], 3)
 

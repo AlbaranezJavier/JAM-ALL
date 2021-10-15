@@ -82,7 +82,7 @@ class DataManager():
         for path in self.X[step][self.batches[step][idx]:self.batches[step][idx + 1]]:
             _img = cv2.imread(path)
             if self.original_size != self.label_size[0:2]:
-                _img = cv2.rotate(_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                # _img = cv2.rotate(_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 _img = cv2.resize(_img, (self.label_size[1], self.label_size[0]))
             _img = cv2.cvtColor(_img, color_space).astype('float32') if color_space is not None else _img.astype(
                 'float32')
@@ -104,11 +104,11 @@ class DataManager():
         return np.array(y)
 
     def _get4json(self, path):
+        mask = np.zeros(tuple(list(self.original_size) + [2]), dtype="float32")
+        with open(path, "r") as reader:
+            data = json.load(reader)
+            reader.close()
         if self.labels == ["binary"]:
-            mask = np.zeros(tuple(list(self.original_size)+[2]), dtype="float32")
-            with open(path, "r") as reader:
-                data = json.load(reader)
-                reader.close()
             for i in range(data[self.NUMBER]):
                 x1 = int(data[self.CELL+str(i)]["x1"])
                 x2 = int(data[self.CELL+str(i)]["x2"])
@@ -118,9 +118,18 @@ class DataManager():
                 mask[:, :, 1] = ((mask[:, :, 0] == 0)*1.).astype("float32")
             if self.original_size != self.label_size[0:2]:
                 mask = cv2.resize(mask, (self.label_size[1], self.label_size[0]), cv2.INTER_NEAREST)
-            return mask
-        else:
-            pass
+        elif self.labels == ["classes_cnn"]:
+            classes = {"Artifact": 0, "Burst": 1, "Eosinophil": 2, "Lymphocyte": 3, "Monocyte": 4, "Neutrophil": 5,
+                       "Large Lymph": 3, "Small Lymph": 3, "Band": 5, "Meta": 5}
+            mask = np.zeros((1, 1, 6))
+            mask[:, :, classes[data["Label"]]] = 1.
+        elif self.labels == ["classes_dense"]:
+            classes = {"Artifact": 0, "Burst": 1, "Eosinophil": 2, "Lymphocyte": 3, "Monocyte": 4, "Neutrophil": 5,
+                       "Large Lymph": 3, "Small Lymph": 3, "Band": 5, "Meta": 5}
+            mask = np.zeros(6)
+            mask[classes[data["Label"]]] = 1.
+        return mask
+
 
     def _get4mask(self, path):
         img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
