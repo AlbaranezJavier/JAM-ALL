@@ -22,7 +22,7 @@ class InferenceStats():
         self.dm = dm
         self.p = p
         self.stats_type = stats_type
-        assert self.stats_type == "det" or self.stats_type == "seg", \
+        assert self.stats_type == "det" or self.stats_type == "seg" or self.stats_type == "cls", \
             "InferenceStatas, stats_type: stats_type must be 'det' or 'seg'"
         self.output_type = output_type
         assert output_type == "cls" or output_type == "reg", \
@@ -37,6 +37,14 @@ class InferenceStats():
             counter += 1
         return y
 
+    def _get_labels4cls(self, y, lab):
+        if len(y.shape) == 3:
+            y = y[0, 0, :]
+        if y[lab] == 1:
+            return y
+        else:
+            return np.zeros_like(y)
+
     def _calc_metrics(self, type_set, color_space):
         # Load stats
         stats = [Metrics(self.p, self.stats_type) for _lab in range(self.dm.num_classes + 1)]
@@ -46,7 +54,8 @@ class InferenceStats():
         counter_images = 0
         for idx in range(self.dm.batches_size[type_set] - 1):
             _example_xs = self.dm.batch_x(idx, type_set, color_space)
-            _example_ys = self.dm.batch_y_bbox(idx, type_set) if self.stats_type == "det" else self.dm.batch_y(idx,type_set)
+            _example_ys = self.dm.batch_y_bbox(idx, type_set) if self.stats_type == "det" else self.dm.batch_y(idx,
+                                                                                                               type_set)
 
             _ys_hat = self.im.predict(_example_xs)
 
@@ -59,6 +68,10 @@ class InferenceStats():
                     if self.stats_type == "det":
                         _y_label = self._get_labels4det(_ys_hat[i].copy(), _lab)
                         _y_true = self._get_labels4det(_y_example.copy(), _lab)
+                        _tp, _fn, _fp, _tn, _correspondencies = stats[_lab].cal_stats(_y_label, _y_true)
+                    elif self.stats_type == "cls":
+                        _y_label = _ys_hat[i, 0, 0, :]
+                        _y_true = self._get_labels4cls(_y_example, _lab)
                         _tp, _fn, _fp, _tn, _correspondencies = stats[_lab].cal_stats(_y_label, _y_true)
                     else:
                         _tp, _fn, _fp, _tn, _correspondencies = stats[_lab].cal_stats(_ys_hat[i, ..., _lab],
@@ -187,7 +200,7 @@ class InferenceStats():
 
         # Show statistics
         for _lab in range(self.dm.label_size[2]):
-            print(f'\n =================> Statistics for label {self.dm.labels_class[_lab]} <=================')
+            print(f'\n =================> Statistics for label {_lab} <=================')
             stats[_lab].cal_complex_stats("cumulative")
             stats[_lab].print_table("cumulative", tablefmt)
         print(f'\n =================> Statistics all <=================')
@@ -214,11 +227,11 @@ class InferenceStats():
         if not from_csv:
             for _lab in range(self.dm.label_size[2]):
                 stats[_lab].cal_complex_stats("cumulative")
-                acc += f'{stats[_lab].stats["accuracy"]} ({self.dm.labels[_lab]}), '
-                iou += f'{stats[_lab].stats["iou"]} ({self.dm.labels[_lab]}), '
-                prec += f'{stats[_lab].stats["precision"]} ({self.dm.labels[_lab]}), '
-                rec += f'{stats[_lab].stats["recall"]} ({self.dm.labels[_lab]}), '
-                f1 += f'{stats[_lab].stats["f1"]} ({self.dm.labels[_lab]}), '
+                acc += f'{stats[_lab].stats["accuracy"]} ({_lab}), '
+                iou += f'{stats[_lab].stats["iou"]} ({_lab}), '
+                prec += f'{stats[_lab].stats["precision"]} ({_lab}), '
+                rec += f'{stats[_lab].stats["recall"]} ({_lab}), '
+                f1 += f'{stats[_lab].stats["f1"]} ({_lab}), '
             stats[self.dm.label_size[2]].cal_complex_stats("cumulative")
             acc += f'{stats[self.dm.label_size[2]].stats["accuracy"]} (all) %'
             iou += f'{stats[self.dm.label_size[2]].stats["iou"]} (all) %'

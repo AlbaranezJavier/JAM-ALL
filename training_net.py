@@ -22,7 +22,7 @@ if __name__ == '__main__':
     batch_size = 8
     valid_size = .10
     labels_type = "json" # jpg or json
-    output_type = "cls"  # regression = reg, classification = cls, regression + classficiation = reg+cls
+    output_type = "cls"  # regression = reg, classification = cls, regression + classfication = reg+cls
 
     dm = DataManager(inputs_rgb, input_type, original_size, labels_class, label_size, background, valid_size, batch_size,
                      labels_type, output_type)

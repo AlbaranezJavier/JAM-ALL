@@ -27,7 +27,7 @@ class Metrics:
             "i_specifity": 0, "p": 0
         }
         self.stats_type = stats_type
-        assert self.stats_type == "det" or self.stats_type == "seg", \
+        assert self.stats_type == "det" or self.stats_type == "seg" or self.stats_type == "cls", \
             "Metrics, init: stats_type must be 'det' or 'seg'"
 
     def _cal_seg_stats(self, predicted, gt):
@@ -93,6 +93,24 @@ class Metrics:
         return self.basic_stats["basic"]["tp"], self.basic_stats["basic"]["fn"], self.basic_stats["basic"]["fp"], \
                self.basic_stats["basic"]["tn"], self.all_iou_correspondencies4det
 
+    def _cal_cls_stats(self, predicted, gt):
+        """
+        Calculates tp, fn, fp and tn for a predicted classifications and its ground truth
+        :param predicted: classifications
+        :param gt: classifications
+        :return: tp, fn, fp, tn
+        """
+        zeros = np.zeros_like(predicted)
+        if (gt == zeros).all():
+            pass
+        elif (predicted == gt).all():
+            self.basic_stats["basic"]["tp"] = 1
+        else:
+            self.basic_stats["basic"]["fp"] = 1
+
+        return self.basic_stats["basic"]["tp"], self.basic_stats["basic"]["fn"], self.basic_stats["basic"]["fp"], \
+               self.basic_stats["basic"]["tn"], self.all_iou_correspondencies4det
+
     def _sort_corresponds(self, corresponds):
         for correspond in corresponds:
             correspond.sort(key=lambda x: x[1])
@@ -112,6 +130,8 @@ class Metrics:
             return self._cal_det_stats(predicted, gt)
         elif self.stats_type == "seg":
             return self._cal_seg_stats(predicted, gt)
+        elif self.stats_type == "cls":
+            return self._cal_cls_stats(predicted, gt)
 
     def update_cumulative_stats(self):
         """
@@ -122,6 +142,11 @@ class Metrics:
         self.basic_stats["cumulative"]["fn"] += self.basic_stats["basic"]["fn"]
         self.basic_stats["cumulative"]["fp"] += self.basic_stats["basic"]["fp"]
         self.basic_stats["cumulative"]["tn"] += self.basic_stats["basic"]["tn"]
+
+        self.basic_stats["basic"]["tp"] = 0
+        self.basic_stats["basic"]["fn"] = 0
+        self.basic_stats["basic"]["fp"] = 0
+        self.basic_stats["basic"]["tn"] = 0
 
     def add_cumulative_stats(self, tp, fn, fp, tn, correspondecies=[]):
         """

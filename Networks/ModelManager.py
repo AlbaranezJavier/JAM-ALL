@@ -321,6 +321,8 @@ class InferenceModel(ModelManager):
 
     def _mask_inference4seg(self, input):
         y_hat = self.nn.predict(input)
+        if len(y_hat.shape) == 2:
+            y_hat = np.expand_dims(np.expand_dims(y_hat, 1), 1)
         img = np.ones_like(y_hat, dtype=np.uint8)
         for i in range(y_hat.shape[0]):
             _idx_masks = np.argmax(y_hat[i], axis=2)
