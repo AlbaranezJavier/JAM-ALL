@@ -117,6 +117,28 @@ class DataManager():
                 mask[:, :, 1] = ((mask[:, :, 0] == 0)*1.).astype("float32")
             if self.original_size != self.label_size[0:2]:
                 mask = cv2.resize(mask, (self.label_size[1], self.label_size[0]), cv2.INTER_NEAREST)
+        if self.labels == ["binary_dense"]:
+            mask = np.zeros(tuple(list(self.original_size) + [2]), dtype="float32")
+            for i in range(data[self.NUMBER]):
+                x1 = int(data[self.CELL+str(i)]["x1"])
+                x2 = int(data[self.CELL+str(i)]["x2"])
+                y1 = int(data[self.CELL+str(i)]["y1"])
+                y2 = int(data[self.CELL+str(i)]["y2"])
+                _shape = mask[y1:y2, x1:x2, 0].shape
+                if _shape[0] // 2 != 0 and _shape[1] // 2 != 0:
+                    region = np.zeros(self.original_size, dtype=np.float32)
+                    region[y1:y2, x1:x2] = 1.
+                    _v_grad = np.repeat(1 - np.abs(np.linspace(-1., 1., _shape[1], dtype=np.float16))[None],
+                                        _shape[0], axis=0)
+                    _h_grad = np.repeat(1 - np.abs(np.linspace(-1., 1., _shape[0], dtype=np.float16))[None],
+                                        _shape[1], axis=0).T
+                    _grad_mask = _v_grad * _h_grad
+                    _grad_mask[_shape[0] // 2, _shape[1] // 2] = 1.0
+                    region[y1:y2, x1:x2] = (region[y1:y2, x1:x2] * _grad_mask).astype(np.float32)
+                    mask[:, :, 0] = region * (region > mask[:, :, 0]) + mask[:, :, 0] * (region <= mask[:, :, 0])
+                    mask[:, :, 1] = np.ones_like(mask[:, :, 0]) - mask[:, :, 0]
+            if self.original_size != self.label_size[0:2]:
+                mask = cv2.resize(mask, (self.label_size[1], self.label_size[0]), cv2.INTER_NEAREST)
         elif self.labels == ["classes_cnn"]:
             classes = {"Artifact": 0, "Burst": 1, "Eosinophil": 2, "Lymphocyte": 3, "Monocyte": 4, "Neutrophil": 5,
                        "Large Lymph": 3, "Small Lymph": 3, "Band": 5, "Meta": 5}
