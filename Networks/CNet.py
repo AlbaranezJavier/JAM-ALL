@@ -74,7 +74,7 @@ class Conv2D_NA(keras.layers.Layer):
         self.padding = padding
 
         self.conv = Conv2D(filters=output_channel, kernel_size=(k_dim, k_dim), strides=(stride, stride),
-                           padding=padding, kernel_regularizer=k_reg)
+                           padding=padding, kernel_regularizer=k_reg, use_bias=False)
         self.bn = BatchNormalization()
 
     def call(self, inputs):
@@ -433,9 +433,12 @@ def CNet_3L(inputs, learn_reg=1e-2):
     n7 = concatenate([n6Li, n6M], axis=3)
     n7_1 = Conv2D_NA(k_dim=3, output_channel=128, stride=2, padding="VALID", k_reg=l2)(n7)
     n7_2 = Conv2D_NA(k_dim=3, output_channel=256, stride=1, padding="VALID", k_reg=l2)(n7_1)
-    n7_3 = Conv2D_NA(k_dim=3, output_channel=64, stride=1, padding="VALID", k_reg=l2)(n7_2)
+    n7_3 = Conv2D_NA(k_dim=3, output_channel=128, stride=1, padding="VALID", k_reg=l2)(n7_2)
     n7_4 = Conv2D(filters=6, kernel_size=(3, 3), kernel_regularizer=l2, strides=(1, 1), padding="VALID",
-                  activation="softmax")(n7_3)
+                  activation=None, use_bias=False)(n7_3)
+    n7_4 = BatchNormalization()(n7_4)
+    n7_4 = tf.keras.activations.softmax(n7_4)
+
 
     return n7_4
 
@@ -489,13 +492,18 @@ def CDNet_3L(inputs, learn_reg=1e-2):
     # - Level 7, Ld
     n7 = concatenate([n6Li, n6M], axis=3)
     n7 = Flatten()(n7)
-    n7_1 = Dense(units=32, activation="relu")(n7)
+    n7_1 = Dense(units=24, activation=None, use_bias=False)(n7)
     n7_1 = BatchNormalization()(n7_1)
-    n7_2 = Dense(units=16, activation="relu")(n7_1)
+    n7_1 = tf.keras.activations.relu(n7_1)
+    n7_2 = Dense(units=16, activation=None, use_bias=False)(n7_1)
     n7_2 = BatchNormalization()(n7_2)
-    n7_3 = Dense(units=8, activation="relu")(n7_2)
+    n7_2 = tf.keras.activations.relu(n7_2)
+    n7_3 = Dense(units=8, activation=None, use_bias=False)(n7_2)
     n7_3 = BatchNormalization()(n7_3)
-    n7_4 = Dense(units=6, activation="softmax")(n7_3)
+    n7_3 = tf.keras.activations.relu(n7_3)
+    n7_4 = Dense(units=6, activation=None, use_bias=False)(n7_3)
+    n7_4 = BatchNormalization()(n7_4)
+    n7_4 = tf.keras.activations.softmax(n7_4)
 
     return n7_4
 

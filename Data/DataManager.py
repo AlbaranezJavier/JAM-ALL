@@ -182,7 +182,7 @@ class DataManager():
         return batch_idx
 
     # Annotation management
-    def prediction2mask(self, prediction):
+    def prediction2mask(self, prediction, threshold=0):
         """
         From prediction to mask
         :param prediction: prediction [0,1]
@@ -196,8 +196,12 @@ class DataManager():
                 img[..., lab] = ((_idx_masks == lab) * 1).astype(np.uint8)
             return img
         elif self.output_type == "reg":
-            img = (prediction > 0)*1
+            img = (prediction > threshold)*1
             return img
+
+    def prob2mask(self, prediction, threshold):
+        img = ((prediction > threshold)*1).astype(np.uint8)
+        return img
 
     # Info data for training
     def _get_info(self, directories, step):

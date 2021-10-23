@@ -12,9 +12,9 @@ if __name__ == '__main__':
     verbose = 1
     example = 2
     p = 0.01
-    stats_type = "cls" # det or seg or cls
+    stats_type = "cls" # det or seg or cls or prob (modificar thres en StatsModel 74 y prediction to mask)
     function = {1: "one_example", 2: "valid_set", 3: "A, IoU, P, R, F1", 4: "save images"}
-    select_function = 4
+    select_function = 3
     save_in = r"C:\Users\TTe_J\Downloads\resultados" # solo para "save images"
     tablefmt = "grid" # grid or latex
 
@@ -22,16 +22,16 @@ if __name__ == '__main__':
     # input_dims = (8, 720, 1280, 3)
     # input_dims = (8, 513, 1025, 3)
     # input_dims = (8, 360, 640, 3)
-    input_dims = (8, 180, 320, 3)
-    model = "SNet_3L"  # <========= models = HelperNetV1, ..V2, ..V3, SNet_5L2, .._4L, .._3L, .._3L_plusplus, .._3Lite, .._4, .._5, .._6, MgNet_0,
+    input_dims = (8, 512, 512, 3)
+    model = "CDNet_3L"  # <========= models = HelperNetV1, ..V2, ..V3, SNet_5L2, .._4L, .._3L, .._3L_plusplus, .._3Lite, .._4, .._5, .._6, MgNet_0,
                         # UNetplusplus_3L
-    output_type = "cls"  # regression = reg, classification = cls, regression + classficiation = reg+cls
-    inference_type = "mask4seg" # bbox4reg, bbox4seg, mask4reg or mask4seg
+    output_type = "cls"  # reg, cls, reg+cls
+    inference_type = "mask4seg" # bbox4reg, bbox4seg, prob4seg, mask4reg or mask4seg
     min_area = 3 # <= for bbox4reg
     neighbours = 3 # <= for bbox4reg
-    start_epoch = 108  # <= numero de épocas que ya ha entrenado
+    start_epoch = 100  # <= numero de épocas que ya ha entrenado
     color_space = 44 # <= bgr=None, lab=44, yuv=82, hsv=40, hsl=52
-    specific_weights = f"real_cls_v2_lab"
+    specific_weights = f"real_dense_v2_cls_lab"
     weights_path = f'../Weights/{model}/{specific_weights}_epoch'
 
     # Results from csv
@@ -42,13 +42,13 @@ if __name__ == '__main__':
     inputs_rgb = [r'C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\cropped_v2']
     input_type = "png" # png, jpg
     # original_size = (2988, 5312)
-    original_size = (180, 320)
+    original_size = (575, 575)
     # inputs_rgb = [r'C:\Users\TTe_J\Downloads\17-17-05']
-    labels_class = ["binary_dense"] # ["binary"] or ["binary_dense"] or ["classes_cnn"] or ["classes_dense]
+    labels_class = ["classes_dense"] # ["binary"] or ["binary_dense"] or ["classes_cnn"] or ["classes_dense]
     label_type = "json" # mask or json
     # labels = ["b", "y", "o_s", "o_b"]
     label_size = (input_dims[1], input_dims[2], 6)
-    background = True
+    background = False
     batch_size = 8
     valid_size = .10
 

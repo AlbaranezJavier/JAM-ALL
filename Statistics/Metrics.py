@@ -27,7 +27,8 @@ class Metrics:
             "i_specifity": 0, "p": 0
         }
         self.stats_type = stats_type
-        assert self.stats_type == "det" or self.stats_type == "seg" or self.stats_type == "cls", \
+        assert self.stats_type == "det" or self.stats_type == "seg" or self.stats_type == "cls" or \
+               self.stats_type == "prob", \
             "Metrics, init: stats_type must be 'det' or 'seg'"
 
     def _cal_seg_stats(self, predicted, gt):
@@ -128,7 +129,7 @@ class Metrics:
     def cal_stats(self, predicted, gt):
         if self.stats_type == "det":
             return self._cal_det_stats(predicted, gt)
-        elif self.stats_type == "seg":
+        elif self.stats_type == "seg" or self.stats_type == "prob":
             return self._cal_seg_stats(predicted, gt)
         elif self.stats_type == "cls":
             return self._cal_cls_stats(predicted, gt)

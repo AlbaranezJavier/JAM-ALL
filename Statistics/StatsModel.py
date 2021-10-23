@@ -22,8 +22,8 @@ class InferenceStats():
         self.dm = dm
         self.p = p
         self.stats_type = stats_type
-        assert self.stats_type == "det" or self.stats_type == "seg" or self.stats_type == "cls", \
-            "InferenceStatas, stats_type: stats_type must be 'det' or 'seg'"
+        assert self.stats_type == "det" or self.stats_type == "seg" or self.stats_type == "cls" or \
+               self.stats_type == "prob", "InferenceStatas, stats_type: stats_type must be 'det' or 'seg'"
         self.output_type = output_type
         assert output_type == "cls" or output_type == "reg", \
             "InferenceStats (24), output_type: it must be 'cls' or 'reg'"
@@ -61,21 +61,24 @@ class InferenceStats():
 
             for i in range(len(_ys_hat)):
                 counter_images += 1
-                _y_example = _example_ys[i] if self.output_type == "cls" or self.stats_type == "det" else \
-                    self.dm.prediction2mask(_example_ys[i])
-
                 for _lab in range(self.dm.label_size[2]):
                     if self.stats_type == "det":
                         _y_label = self._get_labels4det(_ys_hat[i].copy(), _lab)
-                        _y_true = self._get_labels4det(_y_example.copy(), _lab)
+                        _y_true = self._get_labels4det(_example_ys[i].copy(), _lab)
                         _tp, _fn, _fp, _tn, _correspondencies = stats[_lab].cal_stats(_y_label, _y_true)
                     elif self.stats_type == "cls":
                         _y_label = _ys_hat[i, 0, 0, :]
-                        _y_true = self._get_labels4cls(_y_example, _lab)
+                        _y_true = self._get_labels4cls(_example_ys[i], _lab)
                         _tp, _fn, _fp, _tn, _correspondencies = stats[_lab].cal_stats(_y_label, _y_true)
+                    elif self.stats_type == "prob":
+                        _y_label = self.dm.prediction2mask(_ys_hat[i])
+                        _y_true = self.dm.prediction2mask(_example_ys[i])
+                        _tp, _fn, _fp, _tn, _correspondencies = stats[_lab].cal_stats(_y_label[..., _lab],
+                                                                                      _y_true[..., _lab])
                     else:
+                        _y_true = self.dm.prediction2mask(_example_ys[i])
                         _tp, _fn, _fp, _tn, _correspondencies = stats[_lab].cal_stats(_ys_hat[i, ..., _lab],
-                                                                                      _y_example[..., _lab])
+                                                                                      _y_true[..., _lab])
                     stats[_lab].update_cumulative_stats()
                     stats[self.dm.label_size[2]].add_cumulative_stats(_tp, _fn, _fp, _tn, _correspondencies)
 

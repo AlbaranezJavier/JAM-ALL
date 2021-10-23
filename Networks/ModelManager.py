@@ -173,7 +173,8 @@ class TrainingModel(ModelManager):
     def _train_step(self, x, y):
         with tf.GradientTape() as tape:
             logits = self.nn(x, training=True)
-            loss_value = self._loss_fn(y, logits)
+            # loss_value = self._loss_fn(y, logits)
+            loss_value = self._loss_fn(tf.clip_by_value((y+0.5), clip_value_max=1), logits)
         grads = tape.gradient(loss_value, self.nn.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.nn.trainable_weights))
         self._train_acc_metric.update_state(y, logits)
@@ -212,7 +213,8 @@ class InferenceModel(ModelManager):
         super().__init__(model, dim, path_weights, start_epoch, output_type)
         self._inference_type = inference_type
         assert self._inference_type == "bbox4seg" or self._inference_type == "bbox4reg" or \
-               self._inference_type == "mask4reg" or self._inference_type == "mask4seg", \
+               self._inference_type == "mask4reg" or self._inference_type == "mask4seg" or \
+               self._inference_type == "prob4seg", \
             "InferenceModel, init: it must be 'bbox4seg', 'bbox4reg', 'mask4reg' or 'mask4seg'."
         self.predict = self._inference_selector()
 
@@ -234,6 +236,12 @@ class InferenceModel(ModelManager):
             return self._mask_inference4seg
         elif self._inference_type == "mask4reg":
             return self._mask_inference4reg
+        elif self._inference_type == "prob4seg":
+            return self._prob_inference4seg
+
+    def _prob_inference4seg(self, input):
+        y_hat = self.nn.predict(input)
+        return y_hat
 
     def _bbox_inference4reg(self, input):
         y_hat = self.nn.predict(input)
@@ -260,6 +268,42 @@ class InferenceModel(ModelManager):
                         c += 1
             bboxs.append(list(bboxs_dict.values()))
         return bboxs
+
+    def _bbox_inference4seg(self, input):
+        y_hat = self.nn.predict(input)
+        all_bboxs = []
+        for i in range(y_hat.shape[0]):
+            mask = np.argmax(y_hat[i], axis=2)
+            bboxs = []
+            for c in range(y_hat.shape[3] - 1):
+                countours, _ = cv2.findContours(np.uint8((mask == c) * 1), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                for countour in countours:
+                    x, y, w, h = cv2.boundingRect(countour)
+                    if w*h > self._min_area:
+                        p1 = [int(x * self._scale2original_size[1]), int(y * self._scale2original_size[0])]
+                        p2 = [int((x+w) * self._scale2original_size[1]), int((y+h) * self._scale2original_size[0])]
+                        bboxs.append([c, p1, p2])
+            all_bboxs.append(bboxs)
+        return all_bboxs
+
+    def _mask_inference4seg(self, input):
+        y_hat = self.nn.predict(input)
+        if len(y_hat.shape) == 2:
+            y_hat = np.expand_dims(np.expand_dims(y_hat, 1), 1)
+        img = np.ones_like(y_hat, dtype=np.uint8)
+        for i in range(y_hat.shape[0]):
+            _idx_masks = np.argmax(y_hat[i], axis=2)
+            for lab in range(y_hat.shape[3]):
+                img[i, ..., lab] = ((_idx_masks == lab) * 1).astype(np.uint8)
+        return img
+
+    def _mask_inference4reg(self, input):
+        y_hat = self.nn.predict(input)
+        img = np.ones_like(y_hat, dtype=np.uint8)
+        for i in range(y_hat.shape[0]):
+            for c in range(y_hat.shape[3]):
+                img[i, ..., c] = ((y_hat[i, ..., c] > 0) * 1).astype(np.uint8)
+        return img
 
     def _search(self, y, x, c, img_c, bboxs):
         center = self._get_max(y, x, img_c)
@@ -302,38 +346,4 @@ class InferenceModel(ModelManager):
 
         return [x, y, w, h]
 
-    def _bbox_inference4seg(self, input):
-        y_hat = self.nn.predict(input)
-        all_bboxs = []
-        for i in range(y_hat.shape[0]):
-            mask = np.argmax(y_hat[i], axis=2)
-            bboxs = []
-            for c in range(y_hat.shape[3] - 1):
-                countours, _ = cv2.findContours(np.uint8((mask == c) * 1), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                for countour in countours:
-                    x, y, w, h = cv2.boundingRect(countour)
-                    if w*h > self._min_area:
-                        p1 = [int(x * self._scale2original_size[1]), int(y * self._scale2original_size[0])]
-                        p2 = [int((x+w) * self._scale2original_size[1]), int((y+h) * self._scale2original_size[0])]
-                        bboxs.append([c, p1, p2])
-            all_bboxs.append(bboxs)
-        return all_bboxs
 
-    def _mask_inference4seg(self, input):
-        y_hat = self.nn.predict(input)
-        if len(y_hat.shape) == 2:
-            y_hat = np.expand_dims(np.expand_dims(y_hat, 1), 1)
-        img = np.ones_like(y_hat, dtype=np.uint8)
-        for i in range(y_hat.shape[0]):
-            _idx_masks = np.argmax(y_hat[i], axis=2)
-            for lab in range(y_hat.shape[3]):
-                img[i, ..., lab] = ((_idx_masks == lab) * 1).astype(np.uint8)
-        return img
-
-    def _mask_inference4reg(self, input):
-        y_hat = self.nn.predict(input)
-        img = np.ones_like(y_hat, dtype=np.uint8)
-        for i in range(y_hat.shape[0]):
-            for c in range(y_hat.shape[3]):
-                img[i, ..., c] = ((y_hat[i, ..., c] > 0) * 1).astype(np.uint8)
-        return img

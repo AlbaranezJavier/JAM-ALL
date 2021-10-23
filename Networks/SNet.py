@@ -74,7 +74,7 @@ class Conv2D_NA(keras.layers.Layer):
         self.padding = padding
 
         self.conv = Conv2D(filters=output_channel, kernel_size=(k_dim, k_dim), strides=(stride, stride),
-                           padding=padding, kernel_regularizer=k_reg)
+                           padding=padding, kernel_regularizer=k_reg, use_bias=False)
         self.bn = BatchNormalization()
 
     def call(self, inputs):
@@ -254,7 +254,9 @@ def SNet_5L2(inputs, batch, learn_reg=1e-2):
     # - Level 1, Ld
     n1Ld = concatenate([n1Li, n2Ld])
     n1Ld = Conv2D_NA(k_dim=3, output_channel=5, stride=1, padding="SAME", k_reg=l2)(n1Ld)
-    n1Ld = Conv2D(filters=2, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation="softmax")(n1Ld)
+    n1Ld = Conv2D(filters=2, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation=None, use_bias=False)(n1Ld)
+    n1Ld = BatchNormalization()(n1Ld)
+    n1Ld = tf.keras.activations.softmax(n1Ld)
 
     return n1Ld
 
@@ -321,7 +323,9 @@ def SNet_5L3(inputs, batch, learn_reg=1e-2):
     # - Level 1, Ld
     n1Ld = concatenate([n1Li, n2Ld])
     n1Ld = Conv2D_NA(k_dim=3, output_channel=5, stride=1, padding="SAME", k_reg=l2)(n1Ld)
-    n1Ld = Conv2D(filters=2, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation="softmax")(n1Ld)
+    n1Ld = Conv2D(filters=2, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation=None, use_bias=False)(n1Ld)
+    n1Ld = BatchNormalization()(n1Ld)
+    n1Ld = tf.keras.activations.softmax(n1Ld)
 
     return n1Ld
 
@@ -494,7 +498,9 @@ def SNet_4L(inputs, batch, learn_reg=1e-2):
     # - Level 2, Ld
     n2Ld = concatenate([n2Li, n3Ld])
     n2Ld = Conv2D_NA(k_dim=5, output_channel=5, stride=1, padding="SAME", k_reg=l2)(n2Ld)
-    n2Ld = Conv2D(filters=2, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation="softmax")(n2Ld)
+    n2Ld = Conv2D(filters=2, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation=None, use_bias=False)(n2Ld)
+    n2Ld = BatchNormalization()(n2Ld)
+    n2Ld = tf.keras.activations.softmax(n2Ld)
 
     return n2Ld
 
@@ -547,7 +553,9 @@ def SNet_3L(inputs, batch, output_type, learn_reg=1e-2):
         return n3Ld_reg, n3Ld_cls
     else:
         n3Ld = Conv2D_NA(k_dim=5, output_channel=32, stride=1, padding="SAME", k_reg=l2)(n3Ld)
-        n3Ld = Conv2D(filters=2, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation="softmax")(n3Ld)
+        n3Ld = Conv2D(filters=2, kernel_size=(1, 1), kernel_regularizer=l2, padding="SAME", activation=None, use_bias=False)(n3Ld)
+        n3Ld = BatchNormalization()(n3Ld)
+        n3Ld = tf.keras.activations.softmax(n3Ld)
     return n3Ld
 
 def SNet_3L_plusplus(inputs, batch, output_type, learn_reg=1e-2):
