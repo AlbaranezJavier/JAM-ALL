@@ -73,6 +73,8 @@ class InferenceStats():
                     elif self.stats_type == "prob":
                         _y_label = self.dm.prediction2mask(_ys_hat[i])
                         _y_true = self.dm.prediction2mask(_example_ys[i])
+                        # _y_label = self.dm.prob2mask(_ys_hat[i], 0.9)
+                        # _y_true = self.dm.prob2mask(_example_ys[i], 0.99)
                         _tp, _fn, _fp, _tn, _correspondencies = stats[_lab].cal_stats(_y_label[..., _lab],
                                                                                       _y_true[..., _lab])
                     else:

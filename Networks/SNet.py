@@ -80,7 +80,7 @@ class Conv2D_NA(keras.layers.Layer):
     def call(self, inputs):
         channels = self.conv(inputs)
         norm = self.bn(channels)
-        return tf.nn.relu(norm + self.conv.bias)
+        return tf.nn.relu(norm)
 
 class Net_test(Model):
     def __init__(self):

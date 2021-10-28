@@ -173,8 +173,7 @@ class TrainingModel(ModelManager):
     def _train_step(self, x, y):
         with tf.GradientTape() as tape:
             logits = self.nn(x, training=True)
-            # loss_value = self._loss_fn(y, logits)
-            loss_value = self._loss_fn(tf.clip_by_value((y+0.5), clip_value_max=1), logits)
+            loss_value = self._loss_fn(y, logits)
         grads = tape.gradient(loss_value, self.nn.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.nn.trainable_weights))
         self._train_acc_metric.update_state(y, logits)

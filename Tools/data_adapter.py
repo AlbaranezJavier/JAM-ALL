@@ -1,6 +1,5 @@
 import cv2, glob, json
 from multiprocessing import Pool
-from ctypes import c_char_p
 
 '''
 This script pre-processes the input data to speed up the neural network training process.
@@ -30,13 +29,13 @@ def task(args):
 
 if __name__ == '__main__':
     # original data
-    folder = r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\First_microscope_all"
+    folder = r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\first_v3_all"
     images = "/images/"
     jsons = "/jsons/"
     original_resolution = (5312, 2988)
     # new data
-    new_resolution = (1280, 720)
-    new_destination = r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\First_microscope_all_1280x720"
+    new_resolution = (320, 180)
+    new_destination = r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\first_v3_all_320x180"
     # multiprocessing
     pool = Pool(None)
 
