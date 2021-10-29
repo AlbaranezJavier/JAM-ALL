@@ -94,20 +94,24 @@ class Metrics:
         return self.basic_stats["basic"]["tp"], self.basic_stats["basic"]["fn"], self.basic_stats["basic"]["fp"], \
                self.basic_stats["basic"]["tn"], self.all_iou_correspondencies4det
 
-    def _cal_cls_stats(self, predicted, gt):
+    def _cal_cls_stats(self, predicted, gt, label):
         """
         Calculates tp, fn, fp and tn for a predicted classifications and its ground truth
         :param predicted: classifications
         :param gt: classifications
         :return: tp, fn, fp, tn
         """
-        zeros = np.zeros_like(predicted)
-        if (gt == zeros).all():
-            pass
-        elif (predicted == gt).all():
-            self.basic_stats["basic"]["tp"] = 1
+
+        if (predicted == gt).all():
+            if np.argmax(gt) == label:
+                self.basic_stats["basic"]["tp"] = 1
+            else:
+                self.basic_stats["basic"]["tn"] = 1
+        elif np.argmax(gt) == label:
+            self.basic_stats["basic"]["fn"] = 1
         else:
             self.basic_stats["basic"]["fp"] = 1
+
 
         return self.basic_stats["basic"]["tp"], self.basic_stats["basic"]["fn"], self.basic_stats["basic"]["fp"], \
                self.basic_stats["basic"]["tn"], self.all_iou_correspondencies4det
@@ -126,13 +130,13 @@ class Metrics:
         iou = inter_area / float(pred_area + gt_area - inter_area)
         return iou
 
-    def cal_stats(self, predicted, gt):
+    def cal_stats(self, predicted, gt, lab=None):
         if self.stats_type == "det":
             return self._cal_det_stats(predicted, gt)
         elif self.stats_type == "seg" or self.stats_type == "prob":
             return self._cal_seg_stats(predicted, gt)
         elif self.stats_type == "cls":
-            return self._cal_cls_stats(predicted, gt)
+            return self._cal_cls_stats(predicted, gt, lab)
 
     def update_cumulative_stats(self):
         """

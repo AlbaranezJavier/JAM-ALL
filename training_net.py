@@ -10,7 +10,7 @@ This script executes the training of the network.
 
 if __name__ == '__main__':
     # Data Variables
-    inputs_rgb = [r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\first_v2_all_320x180"]
+    inputs_rgb = [r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\first_v3_all_320x180"]
     input_type = "png" # jpg, png, bmp
     # original_size = (2988, 5312)
     original_size = (180, 320)
@@ -31,9 +31,9 @@ if __name__ == '__main__':
     model = "SNet_3L"     # models = HelperNetV1, ..V2, ..V3, SNet_5L2, .._4L, .._3L, .._3L_plusplus, .._3Lite, .._4,
                           # .._5, .._6, MgNet_0, UNetplusplus_3L, .._3L_p, CNet_3L
     start_epoch = 0  # <= number epoch trained
-    id_copy = "_cls_v2_lab"  # <= logs version? "" => main
+    id_copy = "_cls_v3_lab"  # <= logs version? "" => main
     color_space = 44  # <= bgr=None, lab=44, yuv=82, hsv=40, hsl=52
-    end_epoch = start_epoch + 100
+    end_epoch = start_epoch + 400
     learn_opt, learn_reg = 1e-3, 1e-2
     save_weights = True
     min_acc = 99.75

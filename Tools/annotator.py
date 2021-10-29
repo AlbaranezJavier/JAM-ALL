@@ -28,7 +28,7 @@ if __name__ == '__main__':
     ix, iy = -1, -1
     data = {}
     k = None
-    FOCUSED_LABELS = ['Neutrophil', 'Large Lymph', 'Band', 'Small Lymph', 'Monocyte', 'Eosinophil', 'Meta', None]
+    FOCUSED_LABELS = ['Neutrophil', 'Large Lymph', 'Band', 'Small Lymph', 'Monocyte', 'Eosinophil', 'Meta', "Basophil"]
 
     display_size = (1920, 1080)
     new_size = (320, 180)
