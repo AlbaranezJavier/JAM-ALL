@@ -417,11 +417,10 @@ class TrainingStats():
 
         # Show metrics
         if verbose == 1:
-            print('\r',
-                  f'Epoch {epoch}, Train_loss: {loss}, Train_acc: {acc_train}, Valid_acc: {acc_valid}, Time: {end_time}',
+            print(f'\rEpoch {epoch}, Train_loss: {loss}, Train_acc: {acc_train}, Valid_acc: {acc_valid}, Time: {end_time}',
                   end='')
             if saved:
-                print(f' <= saved', end='')
+                print(f' <= saved')
             print()
         self._save()
 
