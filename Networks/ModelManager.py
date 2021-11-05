@@ -3,8 +3,6 @@ import tensorflow as tf
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import RMSprop
-from tensorflow.keras.losses import CategoricalCrossentropy, BinaryCrossentropy, MeanAbsoluteError, MeanSquaredError
-from tensorflow.keras.metrics import CategoricalAccuracy, BinaryAccuracy, Accuracy
 from Networks.SNet import *
 from Networks.CNet import *
 from Networks.HNet import *
@@ -18,8 +16,12 @@ import matplotlib.pyplot as plt
 This script contains all the necessary methods for training and inference processes.
 '''
 
-losses = {"categorical_crossentropy": CategoricalCrossentropy}
-metrics = {"categorical_accuracy": CategoricalAccuracy}
+losses = {"categorical_crossentropy": tf.keras.losses.CategoricalCrossentropy,
+          "mse": tf.keras.losses.MeanSquaredError,
+          "mae": tf.keras.losses.MeanAbsoluteError}
+metrics = {"categorical_accuracy": tf.keras.metrics.CategoricalAccuracy,
+           "mse": tf.keras.metrics.MeanSquaredError,
+           "mae": tf.keras.metrics.MeanAbsoluteError}
 
 
 class ModelManager:

@@ -27,8 +27,8 @@ if __name__ == '__main__':
                        weights_path=f'Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
                        optimizer=Adam(learn_opt),
-                       loss_func="categorical_crossentropy",
-                       metric_func="categorical_accuracy")
+                       loss_func="mse",
+                       metric_func="mse")
 
     # Data Variables
     train, test = DataManager.loadDataset(

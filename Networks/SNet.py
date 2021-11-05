@@ -432,24 +432,24 @@ def SNet_3L_overfitting(dim, learn_reg=1e-2):
     fixed_n3Li = Conv2DFixed("border", out_channels=3)(inputs)
     input_fixed = concatenate([fixed_n3Li, inputs], axis=3)
 
-    n3Li = Conv2D_NA(k_dim=5, output_channel=64, stride=1, padding="SAME")(input_fixed)
+    n3Li = Conv2D_NA(k_dim=5, output_channel=32, stride=1, padding="SAME")(input_fixed)
 
     # - Level 4, Li
-    n4Li = Conv2DFixed("bilinear", out_channels=64)(n3Li)
+    n4Li = Conv2DFixed("bilinear", out_channels=32)(n3Li)
     inputs_n4Li = tf.image.resize(input_fixed, [90, 160], antialias=False)
     n4Li = concatenate([n4Li, inputs_n4Li], axis=3)
 
-    n4Li = Conv2D_NA(k_dim=5, output_channel=256, stride=1, padding="SAME")(n4Li)
+    n4Li = Conv2D_NA(k_dim=5, output_channel=128, stride=1, padding="SAME")(n4Li)
 
     # - Level 5, Li
-    n5Li = Conv2DFixed("bilinear", out_channels=256)(n4Li)
+    n5Li = Conv2DFixed("bilinear", out_channels=128)(n4Li)
     inputs_n5Li = tf.image.resize(input_fixed, [45, 80], antialias=False)
     n5Li = concatenate([n5Li, inputs_n5Li], axis=3)
 
     n5Li = Conv2D_NA(k_dim=5, output_channel=512, stride=1, padding="SAME")(n5Li)
 
     # - Level 6, M
-    n6M = Conv2D_NA(k_dim=5, output_channel=1024, stride=1, padding="SAME")(n5Li)
+    n6M = Conv2D_NA(k_dim=5, output_channel=512, stride=1, padding="SAME")(n5Li)
 
     # - Level 5, Ld
     n5Ld = concatenate([n5Li, n6M], axis=3)
@@ -458,12 +458,12 @@ def SNet_3L_overfitting(dim, learn_reg=1e-2):
 
     # - Level 4, Ld
     n4Ld = concatenate([n4Li, n5Ld], axis=3)
-    n4Ld = Conv2D_NA(k_dim=5, output_channel=256, stride=1, padding="SAME")(n4Ld)
-    n4Ld = Conv2DFixed_Transpose("bilinear", [batch, 180, 320, 256])(n4Ld)
+    n4Ld = Conv2D_NA(k_dim=5, output_channel=128, stride=1, padding="SAME")(n4Ld)
+    n4Ld = Conv2DFixed_Transpose("bilinear", [batch, 180, 320, 128])(n4Ld)
 
     # - Level 3, Ld
     n3Ld = concatenate([n3Li, n4Ld])
-    n3Ld = Conv2D_NA(k_dim=5, output_channel=64, stride=1, padding="SAME")(n3Ld)
+    n3Ld = Conv2D_NA(k_dim=5, output_channel=32, stride=1, padding="SAME")(n3Ld)
     n3Ld = Conv2D(filters=2, kernel_size=(1, 1), padding="SAME", activation=None, use_bias=False)(n3Ld)
     n3Ld = BatchNormalization()(n3Ld)
     n3Ld = tf.keras.activations.softmax(n3Ld)
