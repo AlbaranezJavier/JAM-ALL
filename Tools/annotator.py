@@ -19,7 +19,7 @@ if __name__ == '__main__':
     IMAGES = "/images/"
     JSONS = "/jsons/"
     SAVE_PATH = r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\second_v3_all"
-    start_in = 702
+    start_in = 2004
     CELL_NUMBERS = "Cell Numbers"
     COLOR = (0, 0, 255)
     THICKNESS = 3

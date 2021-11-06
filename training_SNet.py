@@ -5,6 +5,7 @@ from Statistics.StatsModel import TrainingStats
 from Networks.SNet import *
 from tensorflow.keras.optimizers import RMSprop, Adam
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 '''
 This script executes the training of the network.
@@ -27,7 +28,7 @@ if __name__ == '__main__':
                        weights_path=f'Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
                        optimizer=Adam(learn_opt),
-                       loss_func="mse",
+                       loss_func="categorical_crossentropy",
                        metric_func="mse")
 
     # Data Variables
@@ -46,11 +47,12 @@ if __name__ == '__main__':
         loss_value = 0
         for batch_x, batch_y in tqdm(train, desc=f'Train_batch: {epoch}'):
             loss_value += tm.train_step(batch_x, batch_y)
-        train_acc = tm.get_acc("train")
+        train_acc = tm.get_acc_regresion("train")
         # Test
         for batch_x, batch_y in tqdm(test, desc=f'Test_batch: {epoch}'):
             tm.valid_step(batch_x, batch_y)
-        valid_acc = tm.get_acc("valid")
+        valid_acc = tm.get_acc_regresion("valid")
+
 
         # Saves the weights of the model if it obtains the best result in validation
         end_time = round((time.time() - start_time) / 60, 2)

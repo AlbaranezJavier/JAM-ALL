@@ -1,24 +1,13 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Input
-from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import RMSprop
-from Networks.SNet import *
-from Networks.CNet import *
-from Networks.HNet import *
-from Networks.MgNet import *
-from Networks.UNetplusplus import *
-
-import time
-import matplotlib.pyplot as plt
 
 '''
 This script contains all the necessary methods for training and inference processes.
 '''
 
-losses = {"categorical_crossentropy": tf.keras.losses.CategoricalCrossentropy,
-          "mse": tf.keras.losses.MeanSquaredError,
-          "mae": tf.keras.losses.MeanAbsoluteError}
+losses = {"categorical_crossentropy": tf.keras.losses.CategoricalCrossentropy(from_logits=False),
+          "mse": tf.keras.losses.MeanSquaredError(),
+          "mae": tf.keras.losses.MeanAbsoluteError()}
 metrics = {"categorical_accuracy": tf.keras.metrics.CategoricalAccuracy,
            "mse": tf.keras.metrics.MeanSquaredError,
            "mae": tf.keras.metrics.MeanAbsoluteError}
@@ -43,7 +32,7 @@ class TrainingModel(ModelManager):
         self.optimizer = optimizer
         self._train_acc_value = 0
         self._valid_acc_value = 0
-        self._loss_fn = losses[loss_func](from_logits=False)
+        self._loss_fn = losses[loss_func]
         self._train_acc_metric = metrics[metric_func]()
         self._valid_acc_metric = metrics[metric_func]()
 
@@ -70,16 +59,13 @@ class TrainingModel(ModelManager):
             return False
 
     # Metrics
-    def get_acc(self, type):
+    def get_acc_categorical(self, type):
         acc_metrics = self._train_acc_metric if type == "train" else self._valid_acc_metric
-        if isinstance(acc_metrics, list):
-            acc = []
-            for acc_metric in acc_metrics:
-                acc.append(float(acc_metric.result() * 100.))
-                acc_metric.reset_states()
-            return acc
-        else:
-            return float(acc_metrics.result() * 100.)
+        return float(acc_metrics.result() * 100.)
+
+    def get_acc_regresion(self, type):
+        acc_metrics = self._train_acc_metric if type == "train" else self._valid_acc_metric
+        return float((1-acc_metrics.result()) * 100.)
 
     # Training and validation steps
     @tf.function
