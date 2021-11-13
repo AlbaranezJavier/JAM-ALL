@@ -1,16 +1,20 @@
 import numpy as np
 import tensorflow as tf
+import os, random
 
 '''
 This script contains all the necessary methods for training and inference processes.
 '''
 
 losses = {"categorical_crossentropy": tf.keras.losses.CategoricalCrossentropy(from_logits=False),
+          "categorical_crossentropy_true": tf.keras.losses.CategoricalCrossentropy(from_logits=True),
           "mse": tf.keras.losses.MeanSquaredError(),
-          "mae": tf.keras.losses.MeanAbsoluteError()}
+          "mae": tf.keras.losses.MeanAbsoluteError(),
+          "sparse_categorical_crossentropy": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)}
 metrics = {"categorical_accuracy": tf.keras.metrics.CategoricalAccuracy,
            "mse": tf.keras.metrics.MeanSquaredError,
-           "mae": tf.keras.metrics.MeanAbsoluteError}
+           "mae": tf.keras.metrics.MeanAbsoluteError,
+           "sparse_categorical_accuracy": tf.keras.metrics.SparseCategoricalAccuracy}
 
 
 class ModelManager:
@@ -18,12 +22,12 @@ class ModelManager:
     This class manages the neural models
     """
 
-    def __init__(self, nn, weights_path, start_epoch, verbose=1):
+    def __init__(self, nn, weights_path, epoch, verbose=1):
         self.nn = nn
         self.nn.summary() if verbose == 1 else None
         self.weights_path = weights_path
-        self.nn.load_weights(f'{weights_path}_{start_epoch}') if start_epoch > 0 else None
-        print(f'Model {self.nn}_epoch{start_epoch} ready!')
+        self.nn.load_weights(f'{weights_path}_{epoch}') if epoch > 0 else None
+        print(f'Model {self.nn}_epoch{epoch} ready!')
 
 
 class TrainingModel(ModelManager):
@@ -65,7 +69,7 @@ class TrainingModel(ModelManager):
 
     def get_acc_regresion(self, type):
         acc_metrics = self._train_acc_metric if type == "train" else self._valid_acc_metric
-        return float((1-acc_metrics.result()) * 100.)
+        return float((1 - acc_metrics.result()) * 100.)
 
     # Training and validation steps
     @tf.function
@@ -105,3 +109,8 @@ class InferenceModel(ModelManager):
         return img
 
 
+def set_seeds(seed: int = 1234):
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    random.seed(seed)
+    tf.random.set_seed(seed)
+    np.random.seed(seed)

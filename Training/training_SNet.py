@@ -17,7 +17,6 @@ if __name__ == '__main__':
     learn_opt, learn_reg = 1e-3, 1e-2
     start_epoch = 0  # <= number epoch trained
     id_copy = "_prob_v3"  # <= logs version? "" => main
-    color_space = 44  # <= bgr=None, lab=44, yuv=82, hsv=40, hsl=52
     end_epoch = start_epoch + 100
     save_weights = True
     min_acc = 99.75
