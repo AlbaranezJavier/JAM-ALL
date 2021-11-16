@@ -10,26 +10,30 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import os, random
 import numpy as np
-
+import tensorflow.keras.backend
 '''
 This script executes the training of the network.
 '''
 
 if __name__ == '__main__':
-    set_seeds(1234)
+    # set_seeds(1234)
     # Net Variables
     model = "ViT"
     start_epoch = 0  # <= number epoch trained
     id_copy = "_cropped_v3_all_512x512"  # <= logs version? "" => main
-    end_epoch = 600
+    end_epoch = 4000
     learn_opt = tf.keras.optimizers.schedules.PolynomialDecay(
         initial_learning_rate=1e-3,
-        decay_steps=end_epoch,
-        end_learning_rate=1e-6,
-        power=0.5)
-    decay_opt = 1e-5
+        decay_steps=250,
+        end_learning_rate=1e-7,
+        power=0.3)
+    decay_opt = tf.keras.optimizers.schedules.PolynomialDecay(
+        initial_learning_rate=1e-4,
+        decay_steps=250,
+        end_learning_rate=1e-8,
+        power=0.3)
     save_weights = True
-    min_acc = 80
+    min_acc = 90.8
     specific_weights = "" + id_copy
     input_dims = (32, 72, 72, 3)
     patch_size = 6
@@ -46,7 +50,8 @@ if __name__ == '__main__':
                                           mlp_head_units=[2048, 1024]),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
-                       optimizer=AdamW(learn_opt, decay_opt),
+                       optimizer=AdamW(learning_rate=learn_opt(0), weight_decay=decay_opt(0)),
+                       schedules={"learn_opt": learn_opt, "decay_opt": decay_opt},
                        loss_func="categorical_crossentropy_true",
                        metric_func="categorical_accuracy")
 
@@ -63,10 +68,11 @@ if __name__ == '__main__':
     for epoch in range(start_epoch + 1, end_epoch + 1):
         # Train
         start_time = time.time()
-        loss_value = 0
+        loss_value, lr = 0, -1
         for batch_x, batch_y in tqdm(train, desc=f'Train_batch: {epoch}'):
             batch_x = tf.image.resize(batch_x, [72, 72])
-            loss_value += tm.train_step(batch_x, batch_y)
+            loss, lr = tm.train_step(batch_x, batch_y, epoch)
+            loss_value += loss
         train_acc = tm.get_acc_categorical("train")
         # Test
         for batch_x, batch_y in tqdm(test, desc=f'Test_batch: {epoch}'):
@@ -78,4 +84,4 @@ if __name__ == '__main__':
         # Saves the weights of the model if it obtains the best result in validation
         end_time = round((time.time() - start_time) / 60, 2)
         is_saved = tm.save_best(ts.data["best"], valid_acc, min_acc, epoch, end_epoch, save_weights)
-        ts.update_values(epoch, is_saved, loss_value, train_acc, valid_acc, end_time, verbose=1)
+        ts.update_values(epoch, is_saved, loss_value, train_acc, valid_acc, end_time, lr, verbose=1)

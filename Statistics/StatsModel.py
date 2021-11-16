@@ -148,7 +148,7 @@ class TrainingStats():
 
         plt.show()
 
-    def update_values(self, epoch, saved, loss, acc_train, acc_valid, end_time, verbose=1):
+    def update_values(self, epoch, saved, loss, acc_train, acc_valid, end_time, learn_rate, verbose=1):
         loss = list(loss) if type(loss).__module__ == np.__name__ else float(loss)
         current_valid = np.sum(acc_valid)/len(acc_valid) if isinstance(acc_valid, list) else acc_valid
         best_valid = np.sum(self.data[self.BEST])/len(self.data[self.BEST]) if isinstance(self.data[self.BEST], list) \
@@ -165,7 +165,7 @@ class TrainingStats():
 
         # Show metrics
         if verbose == 1:
-            print(f'\rEpoch {epoch}, Train_loss: {loss}, Train_acc: {acc_train}, Valid_acc: {acc_valid}, Time: {end_time}',
+            print(f'\rEpoch {epoch}, Train_loss: {loss}, Learn_rate: {"{:.2E}".format(learn_rate)}, Train_acc: {acc_train}, Valid_acc: {acc_valid}, Time: {end_time}',
                   end='')
             if saved:
                 print(f' <= saved')

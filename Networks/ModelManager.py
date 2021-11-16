@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import os, random
+import tensorflow.keras.backend as K
 
 '''
 This script contains all the necessary methods for training and inference processes.
@@ -31,9 +32,10 @@ class ModelManager:
 
 
 class TrainingModel(ModelManager):
-    def __init__(self, nn, weights_path, start_epoch, optimizer, loss_func, metric_func, verbose=1):
+    def __init__(self, nn, weights_path, start_epoch, optimizer, schedules, loss_func, metric_func, verbose=1):
         super().__init__(nn, weights_path, start_epoch, verbose)
         self.optimizer = optimizer
+        self.schedules = schedules
         self._train_acc_value = 0
         self._valid_acc_value = 0
         self._loss_fn = losses[loss_func]
@@ -73,14 +75,21 @@ class TrainingModel(ModelManager):
 
     # Training and validation steps
     @tf.function
-    def train_step(self, x, y):
+    def train_step(self, x, y, epoch):
         with tf.GradientTape() as tape:
             logits = self.nn(x, training=True)
             loss_value = self._loss_fn(y, logits)
-        grads = tape.gradient(loss_value, self.nn.trainable_weights)
-        self.optimizer.apply_gradients(zip(grads, self.nn.trainable_weights))
-        self._train_acc_metric.update_state(y, logits)
-        return loss_value
+
+            # learning rate update
+            lr = self.schedules["learn_opt"](epoch-1)
+            self.optimizer.lr = lr
+            if "decay_opt" in self.schedules:
+                self.optimizer.weight_decay = self.schedules["decay_opt"](epoch-1)
+
+            grads = tape.gradient(loss_value, self.nn.trainable_weights)
+            self.optimizer.apply_gradients(zip(grads, self.nn.trainable_weights))
+            self._train_acc_metric.update_state(y, logits)
+        return loss_value, lr
 
     @tf.function
     def valid_step(self, x, y):
