@@ -36,11 +36,10 @@ class TrainingModel(ModelManager):
         super().__init__(nn, weights_path, start_epoch, verbose)
         self.optimizer = optimizer
         self.schedules = schedules
-        self._train_acc_value = 0
-        self._valid_acc_value = 0
         self._loss_fn = losses[loss_func]
         self._train_acc_metric = metrics[metric_func]()
         self._valid_acc_metric = metrics[metric_func]()
+
 
     # Save Model
     def save_best(self, best, metric, min_acc, epoch, end_epoch, save_weights):
@@ -81,8 +80,9 @@ class TrainingModel(ModelManager):
             loss_value = self._loss_fn(y, logits)
 
             # learning rate update
-            lr = self.schedules["learn_opt"](epoch-1)
-            self.optimizer.lr = lr
+            if "learn_opt" in self.schedules:
+                lr = self.schedules["learn_opt"](epoch-1)
+                self.optimizer.lr = lr
             if "decay_opt" in self.schedules:
                 self.optimizer.weight_decay = self.schedules["decay_opt"](epoch-1)
 
@@ -94,7 +94,9 @@ class TrainingModel(ModelManager):
     @tf.function
     def valid_step(self, x, y):
         val_logits = self.nn(x, training=False)
+        loss = self._loss_fn(y, val_logits)
         self._valid_acc_metric.update_state(y, val_logits)
+        return loss
 
 
 class InferenceModel(ModelManager):

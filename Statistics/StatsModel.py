@@ -2,16 +2,17 @@ import time, os, json
 import matplotlib.pyplot as plt
 from datetime import datetime
 import numpy as np
+import tensorflow as tf
 
 """
 This script contains the classes related to obtaining statistical data from the neural network.
 """
 
-class TrainingStats():
+class TrainingStats:
     """
     Manage the metrics in training process
     """
-    def __init__(self, model_name, specific_weights, start_epoch=None):
+    def __init__(self, model_name, specific_weights, logs_name, start_epoch=None):
         """
         :param mm: ModelManager
         :param dm: DataManager
@@ -22,6 +23,7 @@ class TrainingStats():
         self.ACC_T = "acc_train"
         self.ACC_V = "acc_valid"
         self.LOSS = "loss"
+        self.LOSS_V = "loss_valid"
         self.TIME = "time"
         self.DATE = "date"
         self.SAVED = "saved"
@@ -34,6 +36,9 @@ class TrainingStats():
         self.path2save = f'{self._path_logs()}{model_name}.json'
         self.data = self._data_struct()
         self._load()
+        # Tensorboard
+        self.train_writer = tf.summary.create_file_writer(f'../Logs/Tensorboard/{logs_name}/train')
+        self.valid_writer = tf.summary.create_file_writer(f'../Logs/Tensorboard/{logs_name}/valid')
 
     def _path_logs(self):
         """
@@ -55,6 +60,7 @@ class TrainingStats():
                 self.EPOCHS: [[]],
                 self.SAVED: [[]],
                 self.LOSS: [[]],
+                self.LOSS_V: [[]],
                 self.ACC_T: [[]],
                 self.ACC_V: [[]],
                 self.BEST: 0,
@@ -96,6 +102,7 @@ class TrainingStats():
             self.data[self.EPOCHS].append([])
             self.data[self.SAVED].append([])
             self.data[self.LOSS].append([])
+            self.data[self.LOSS_V].append([])
             self.data[self.ACC_T].append([])
             self.data[self.ACC_V].append([])
             self.data[self.TIME].append([])
@@ -148,28 +155,38 @@ class TrainingStats():
 
         plt.show()
 
-    def update_values(self, epoch, saved, loss, acc_train, acc_valid, end_time, learn_rate, verbose=1):
+    def update_values(self, epoch, saved, loss, loss_valid, acc_train, acc_valid, end_time, learn_rate, verbose=1):
         loss = list(loss) if type(loss).__module__ == np.__name__ else float(loss)
-        current_valid = np.sum(acc_valid)/len(acc_valid) if isinstance(acc_valid, list) else acc_valid
         best_valid = np.sum(self.data[self.BEST])/len(self.data[self.BEST]) if isinstance(self.data[self.BEST], list) \
             else self.data[self.BEST]
 
         self.data[self.EPOCHS][-1].append(epoch)
         self.data[self.SAVED][-1].append(epoch) if saved else None
         self.data[self.LOSS][-1].append(loss)
+        self.data[self.LOSS_V][-1].append(loss_valid)
         self.data[self.ACC_T][-1].append(acc_train)
         self.data[self.ACC_V][-1].append(acc_valid)
-        self.data[self.BEST] = acc_valid if best_valid < current_valid else self.data[self.BEST]
+        self.data[self.BEST] = loss_valid if best_valid > loss_valid else self.data[self.BEST]
         self.data[self.TIME][-1].append(end_time)
         self.data[self.DATE] = datetime.now().strftime("%d_%m_%Y__%H_%M_%S")
 
         # Show metrics
         if verbose == 1:
-            print(f'\rEpoch {epoch}, Train_loss: {loss}, Learn_rate: {"{:.2E}".format(learn_rate)}, Train_acc: {acc_train}, Valid_acc: {acc_valid}, Time: {end_time}',
+            print(f'\rEpoch {epoch}, t_loss: {"{:.6}".format(loss)}, v_loss: {"{:.6}".format(loss_valid)}, '
+                  f'lr: {"{:.2e}".format(learn_rate)}, t_acc: {"{:.5}".format(acc_train)}, '
+                  f'v_acc: {"{:.5}".format(acc_valid)}, best: {"{:.3}".format(self.data[self.BEST])}, ts: {end_time}',
                   end='')
             if saved:
                 print(f' <= saved')
             print()
         self._save()
+
+        # Tensorboard
+        with self.train_writer.as_default():
+            tf.summary.scalar('loss', loss, step=epoch)
+            tf.summary.scalar('metric', acc_train, step=epoch)
+        with self.valid_writer.as_default():
+            tf.summary.scalar('loss', loss_valid, step=epoch)
+            tf.summary.scalar('metric', acc_valid, step=epoch)
 
 

@@ -32,13 +32,16 @@ if __name__ == '__main__':
 
     # Data Variables
     train, test = DataManager.loadDataset(
-        data_path=r"D:\Datasets\Raabin\first_v3_all_320x180",
+        data_path=r"D:\Datasets\Raabin\segmentation_all_320x180",
         k_fold=0,
         batch=input_dims[0]
     ).get_sets(seed=123)
 
     # Statistics
-    ts = TrainingStats(model + id_copy, specific_weights, start_epoch)
+    ts = TrainingStats(model_name=model + id_copy,
+                       specific_weights=specific_weights,
+                       logs_name="SNet_3L/overfitting/seg/Raabin/720x180/1e-5/500",
+                       start_epoch=start_epoch)
 
     for epoch in range(start_epoch + 1, end_epoch + 1):
         # Train
