@@ -23,7 +23,7 @@ if __name__ == '__main__':
     id_copy = "_cropped_v3_all_256x256"
     end_epoch = 500
     save_weights = True
-    min_acc = 90.0
+    min_acc = 94
     specific_weights = "" + id_copy
     input_dims = (32, 256, 256, 3)
     patch_size = 16

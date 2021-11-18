@@ -89,7 +89,7 @@ class TrainingModel(ModelManager):
             grads = tape.gradient(loss_value, self.nn.trainable_weights)
             self.optimizer.apply_gradients(zip(grads, self.nn.trainable_weights))
             self._train_acc_metric.update_state(y, logits)
-        return loss_value, lr
+        return loss_value, self.optimizer.lr
 
     @tf.function
     def valid_step(self, x, y):

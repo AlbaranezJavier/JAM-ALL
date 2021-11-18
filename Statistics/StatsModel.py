@@ -63,7 +63,7 @@ class TrainingStats:
                 self.LOSS_V: [[]],
                 self.ACC_T: [[]],
                 self.ACC_V: [[]],
-                self.BEST: 0,
+                self.BEST: np.inf,
                 self.TIME: [[]],
                 self.DATE: datetime.now().strftime("%d_%m_%Y__%H_%M_%S")}
         return data
@@ -163,10 +163,10 @@ class TrainingStats:
         self.data[self.EPOCHS][-1].append(epoch)
         self.data[self.SAVED][-1].append(epoch) if saved else None
         self.data[self.LOSS][-1].append(loss)
-        self.data[self.LOSS_V][-1].append(loss_valid)
+        self.data[self.LOSS_V][-1].append(float(loss_valid))
         self.data[self.ACC_T][-1].append(acc_train)
         self.data[self.ACC_V][-1].append(acc_valid)
-        self.data[self.BEST] = loss_valid if best_valid > loss_valid else self.data[self.BEST]
+        self.data[self.BEST] = acc_valid if best_valid < acc_valid else self.data[self.BEST]
         self.data[self.TIME][-1].append(end_time)
         self.data[self.DATE] = datetime.now().strftime("%d_%m_%Y__%H_%M_%S")
 
