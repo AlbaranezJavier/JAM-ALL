@@ -71,3 +71,6 @@ def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, trans
 
     model = keras.Model(inputs, logits)
     return model
+
+def ViT_from_h5(path: str):
+    return keras.models.load_model(path)
