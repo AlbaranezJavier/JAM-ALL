@@ -7,6 +7,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from vit_keras import vit
+import tensorflow_hub as tfh
 
 '''
 This script executes the training of the network.
@@ -14,22 +15,21 @@ This script executes the training of the network.
 
 if __name__ == '__main__':
     # Net Variables
-    model = "ViT_L"
+    model = "EfficientNetV2L"
     start_epoch = 0
-    id_copy = "_cropped_v3_all_384x384"
+    id_copy = "_cropped_v3_all_380x380"
     end_epoch = 100
     save_weights = True
-    min_acc = 94
+    min_acc = 97
     specific_weights = "" + id_copy
-    input_dims = (32, 384, 384, 3)
+    input_dims = (8, 380, 380, 3)
     lr = 1e-5
 
-    tm = TrainingModel(nn=vit.vit_l32(image_size=384,
-                                      activation='linear',
-                                      pretrained=True,
-                                      include_top=True,
-                                      pretrained_top=False,
-                                      classes=6),
+    tm = TrainingModel(nn=tf.keras.applications.efficientnet_v2.EfficientNetV2L(include_top=True,
+                                                                                weights='imagenet',
+                                                                                classes=6,
+                                                                                classifier_activation=None,
+                                                                                include_preprocessing=False),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
                        optimizer=AdamW(learning_rate=1e-5, weight_decay=1e-6),
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     # Statistics
     ts = TrainingStats(model_name=model + id_copy,
                        specific_weights=specific_weights,
-                       logs_name=f"{model}/cls/Raabin/{input_dims[1]}x{input_dims[2]}/1e-5/{end_epoch}",
+                       logs_name=f"{model}/cls/Raabin/{input_dims[1]}x{input_dims[2]}/AdamW/1e-5/{end_epoch}",
                        start_epoch=start_epoch)
 
     for epoch in range(start_epoch + 1, end_epoch + 1):

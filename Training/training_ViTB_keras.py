@@ -14,17 +14,17 @@ This script executes the training of the network.
 
 if __name__ == '__main__':
     # Net Variables
-    model = "ViT_L"
+    model = "ViT_B"
     start_epoch = 0
     id_copy = "_cropped_v3_all_384x384"
     end_epoch = 100
     save_weights = True
     min_acc = 94
     specific_weights = "" + id_copy
-    input_dims = (32, 384, 384, 3)
+    input_dims = (8, 384, 384, 3)
     lr = 1e-5
 
-    tm = TrainingModel(nn=vit.vit_l32(image_size=384,
+    tm = TrainingModel(nn=vit.vit_b32(image_size=384,
                                       activation='linear',
                                       pretrained=True,
                                       include_top=True,

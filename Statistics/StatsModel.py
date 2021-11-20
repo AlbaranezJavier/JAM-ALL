@@ -63,7 +63,7 @@ class TrainingStats:
                 self.LOSS_V: [[]],
                 self.ACC_T: [[]],
                 self.ACC_V: [[]],
-                self.BEST: np.inf,
+                self.BEST: 0,
                 self.TIME: [[]],
                 self.DATE: datetime.now().strftime("%d_%m_%Y__%H_%M_%S")}
         return data
