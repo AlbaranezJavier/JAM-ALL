@@ -6,7 +6,7 @@ from tensorflow_addons.optimizers import AdamW
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from Networks.EfficientNetV2 import EfficientNetV2_L
+from Networks.EfficientNetV2 import EfficientNetV2_M
 
 '''
 This script executes the training of the network.
@@ -14,17 +14,17 @@ This script executes the training of the network.
 
 if __name__ == '__main__':
     # Net Variables
-    model = "EfficientNetV2L"
+    model = "EfficientNetV2M"
     start_epoch = 0
     id_copy = "_cropped_v3_all_480x480"
     end_epoch = 100
     save_weights = True
     min_acc = 97
     specific_weights = "" + id_copy
-    input_dims = (8, 480, 480, 3)
+    input_dims = (4, 480, 480, 3)
     lr = 1e-5
 
-    tm = TrainingModel(nn=EfficientNetV2_L(image_size=480,
+    tm = TrainingModel(nn=EfficientNetV2_M(image_size=480,
                                            num_classes=6,
                                            trainable=True),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # Statistics
     ts = TrainingStats(model_name=model + id_copy,
                        specific_weights=specific_weights,
-                       logs_name=f"{model}/cls/Raabin/{input_dims[1]}x{input_dims[2]}/AdamW/1e-5/{end_epoch}",
+                       logs_name=f"{model}_21k1k_retrain/cls/Raabin/batch_{input_dims[0]}/{input_dims[1]}x{input_dims[2]}/AdamW/1e-5/{end_epoch}",
                        start_epoch=start_epoch)
 
     for epoch in range(start_epoch + 1, end_epoch + 1):
