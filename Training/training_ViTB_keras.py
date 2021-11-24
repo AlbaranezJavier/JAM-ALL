@@ -33,7 +33,7 @@ if __name__ == '__main__':
                                       classes=6),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
-                       optimizer=AdamW(learning_rate=1e-5, weight_decay=1e-6),
+                       optimizer=AdamW(learning_rate=lr, weight_decay=1e-6),
                        schedules={},
                        loss_func="categorical_crossentropy_true",
                        metric_func="categorical_accuracy")
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # Statistics
     ts = TrainingStats(model_name=model + id_copy,
                        specific_weights=specific_weights,
-                       logs_name=f"{model}/cls/Raabin/{input_dims[1]}x{input_dims[2]}/1e-5/{end_epoch}",
+                       logs_name=f"{model}/cls/Raabin/{input_dims[1]}x{input_dims[2]}/{lr}/{end_epoch}",
                        start_epoch=start_epoch)
 
     for epoch in range(start_epoch + 1, end_epoch + 1):
