@@ -5,6 +5,7 @@ from Statistics.StatsModel import TrainingStats
 from Networks.SNet import *
 from tensorflow.keras.optimizers import RMSprop, Adam
 from tqdm import tqdm
+import numpy as np
 import matplotlib.pyplot as plt
 
 '''
@@ -40,23 +41,25 @@ if __name__ == '__main__':
     # Statistics
     ts = TrainingStats(model_name=model + id_copy,
                        specific_weights=specific_weights,
-                       logs_name="SNet_3L/overfitting/seg/Raabin/720x180/1e-5/500",
+                       logs_name=f"SNet_3L/overfitting/seg/Raabin/720x180/{learn_opt}/500",
                        start_epoch=start_epoch)
 
     for epoch in range(start_epoch + 1, end_epoch + 1):
         # Train
         start_time = time.time()
-        loss_value = 0
+        loss_train, lr = [], -1
         for batch_x, batch_y in tqdm(train, desc=f'Train_batch: {epoch}'):
-            loss_value += tm.train_step(batch_x, batch_y)
-        train_acc = tm.get_acc_regresion("train")
+            loss, lr = tm.train_step(batch_x, batch_y, epoch)
+            loss_train.append(loss)
+        train_acc = tm.get_acc_categorical("train")
         # Test
+        loss_valid = []
         for batch_x, batch_y in tqdm(test, desc=f'Test_batch: {epoch}'):
-            tm.valid_step(batch_x, batch_y)
-        valid_acc = tm.get_acc_regresion("valid")
-
+            loss_valid.append(tm.valid_step(batch_x, batch_y))
+        valid_acc = tm.get_acc_categorical("valid")
 
         # Saves the weights of the model if it obtains the best result in validation
         end_time = round((time.time() - start_time) / 60, 2)
         is_saved = tm.save_best(ts.data["best"], valid_acc, min_acc, epoch, end_epoch, save_weights)
-        ts.update_values(epoch, is_saved, loss_value, train_acc, valid_acc, end_time, verbose=1)
+        ts.update_values(epoch, is_saved, np.mean(loss_train), np.mean(loss_valid), train_acc, valid_acc, end_time, lr,
+                         verbose=1)

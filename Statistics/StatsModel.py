@@ -156,14 +156,15 @@ class TrainingStats:
         plt.show()
 
     def update_values(self, epoch, saved, loss, loss_valid, acc_train, acc_valid, end_time, learn_rate, verbose=1):
-        loss = list(loss) if type(loss).__module__ == np.__name__ else float(loss)
+        loss = float(loss)
+        loss_valid = float(loss_valid)
         best_valid = np.sum(self.data[self.BEST])/len(self.data[self.BEST]) if isinstance(self.data[self.BEST], list) \
             else self.data[self.BEST]
 
         self.data[self.EPOCHS][-1].append(epoch)
         self.data[self.SAVED][-1].append(epoch) if saved else None
         self.data[self.LOSS][-1].append(loss)
-        self.data[self.LOSS_V][-1].append(float(loss_valid))
+        self.data[self.LOSS_V][-1].append(loss_valid)
         self.data[self.ACC_T][-1].append(acc_train)
         self.data[self.ACC_V][-1].append(acc_valid)
         self.data[self.BEST] = acc_valid if best_valid < acc_valid else self.data[self.BEST]

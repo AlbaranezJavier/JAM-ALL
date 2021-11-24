@@ -1,22 +1,18 @@
 import time, sys
-from Networks.ModelManager import TrainingModel, set_seeds
+from Networks.ModelManager import TrainingModel
 from Data.DataManager import DataManager
 from Statistics.StatsModel import TrainingStats
-from Networks.ViT import ViT
-from tensorflow.keras.optimizers import RMSprop, Adam
 from tensorflow_addons.optimizers import AdamW
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import os, random
 import numpy as np
-import tensorflow.keras.backend
+
 '''
 This script executes the training of the network.
 '''
 
 if __name__ == '__main__':
-    # set_seeds(1234)
     # Net Variables
     model = "ViT"
     start_epoch = 0
@@ -61,23 +57,24 @@ if __name__ == '__main__':
     for epoch in range(start_epoch + 1, end_epoch + 1):
         # Train
         start_time = time.time()
-        loss_train, lr = 0, -1
+        loss_train, lr = [], -1
         for batch_x, batch_y in tqdm(train, desc=f'Train_batch: {epoch}'):
             batch_x = tf.image.resize(batch_x, input_dims[1:3])
             loss, lr = tm.train_step(batch_x, batch_y, epoch)
-            loss_train += loss
+            loss_train.append(loss)
         train_acc = tm.get_acc_categorical("train")
         # Test
-        loss_valid = 0
+        loss_valid = []
         for batch_x, batch_y in tqdm(test, desc=f'Test_batch: {epoch}'):
             batch_x = tf.image.resize(batch_x, input_dims[1:3])
-            loss_valid += tm.valid_step(batch_x, batch_y)
+            loss_valid.append(tm.valid_step(batch_x, batch_y))
         valid_acc = tm.get_acc_categorical("valid")
 
         # Saves the weights of the model if it obtains the best result in validation
         end_time = round((time.time() - start_time) / 60, 2)
         is_saved = tm.save_best(ts.data["best"], valid_acc, min_acc, epoch, end_epoch, save_weights)
-        ts.update_values(epoch, is_saved, loss_train, loss_valid, train_acc, valid_acc, end_time, lr, verbose=1)
+        ts.update_values(epoch, is_saved, np.mean(loss_train), np.mean(loss_valid), train_acc, valid_acc, end_time, lr,
+                         verbose=1)
 
 
 
