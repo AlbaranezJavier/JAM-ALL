@@ -15,11 +15,11 @@ def click_event(event, x, y, flags, params):
 
 
 if __name__ == '__main__':
-    PATH = r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\first_v3_all_320x180"
+    PATH = r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\Second_microscope_all"
     IMAGES = "/images/"
     JSONS = "/jsons/"
-    SAVE_PATH = r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\first_v3_all_320x180"
-    start_in = 7400
+    SAVE_PATH = r"C:\Users\TTe_J\Downloads\BloodSeg\RabbinData\second_v3_all"
+    start_in = 2004
     CELL_NUMBERS = "Cell Numbers"
     COLOR = (0, 0, 255)
     THICKNESS = 3
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     ix, iy = -1, -1
     data = {}
     k = None
-    FOCUSED_LABELS = ['Neutrophil', 'Large Lymph', 'Band', 'Small Lymph', 'Monocyte', 'Eosinophil', 'Meta', "Basophil"]
+    FOCUSED_LABELS = ['Neutrophil', 'Large Lymph', 'Band', 'Small Lymph', 'Monocyte', 'Eosinophil', 'Meta', 'Basophil', None]
 
     display_size = (1920, 1080)
     new_size = (320, 180)
@@ -54,7 +54,6 @@ if __name__ == '__main__':
                 data2keep.append(data[f"{CELL}{j}"])
             data[CELL_NUMBERS] -= 1
             data.pop(f"{CELL}{j}")
-
         # renombro las celulas que se mantienen en el conjunto, menos si se ha pulsado "d"
         if k != ord('d'):
             for j in range(len(data2keep)):
@@ -67,6 +66,8 @@ if __name__ == '__main__':
                 p1 = (int(x1), int(y1))
                 p2 = (int(x2), int(y2))
                 cv2.rectangle(img, p1, p2, COLOR, THICKNESS)
+                if x1 == 0 and x2 == 0 and y1 == 0 and y2 == 0:
+                    print("Revisar: ", paths[i])
         # Bucle para marcar las nuevas células
         click = False
         k = ord('c')
@@ -109,7 +110,6 @@ if __name__ == '__main__':
                 outfile.close()
 
             # Almaceno la imagen
-            ori = cv2.resize(ori, new_size)
             cv2.imwrite(SAVE_PATH + IMAGES + img_name + ".png", ori)
             # Doy la información por consola
             print(f"{i}/{len(paths)} - {img_name} - {data[CELL_NUMBERS]}")
