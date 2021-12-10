@@ -68,39 +68,42 @@ def positional_encoding(position, d_model):
 
   return pos_encoding.astype(np.float32)[0]
 
-def SLICOprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: int, max_labels: int) -> tuple:
-    patches_batch, positions_batch = [], []
-    for img in imgs:
-        slic = cv2.ximgproc.createSuperpixelSLIC(img, algorithm=cv2.ximgproc.SLICO, region_size=region_size, ruler=ruler)
+def SLICOprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: int, num_patches: int, projection_dim: int) -> tuple:
+    patches_batch, positions_batch = np.zeros((len(imgs), num_patches, projection_dim, 3)), np.zeros((len(imgs), num_patches, projection_dim))
+    for i in range(len(imgs)):
+        slic = cv2.ximgproc.createSuperpixelSLIC(imgs[i], algorithm=cv2.ximgproc.SLICO, region_size=region_size, ruler=ruler)
         slic.iterate(iterations)
         label_slic = slic.getLabels()
         # puede haber más parches de los esperados
         num_labels = np.max(label_slic)
         list_labels = np.array(range(num_labels))
-        if num_labels > max_labels:
-            list_labels = np.delete(list_labels, random.sample(range(num_labels), num_labels - max_labels))
+        if num_labels > num_patches:
+            list_labels = np.delete(list_labels, random.sample(range(num_labels), num_labels - num_patches))
         # codifica las posiciones (x,y) y obtiene los parches
-        pos_encoding = positional_encoding(position=max_labels, d_model=max_labels // 2)
-        patches, positions = [], []
-        for l in list_labels:
-            idx_label = np.where(label_slic == l)
-            y, x = centroid(idx_label)
-            # Aprovecho el loop para adaptar los parches a un tamaño fijo
-            patch = np.zeros((max_labels, 3))
-            temp_patch = np.array([img[y, x, :] for y, x in list(zip(idx_label[0], idx_label[1]))])
-            if len(temp_patch) > max_labels:
-                patch = np.delete(temp_patch, random.sample(range(len(temp_patch)), len(temp_patch) - max_labels), axis=0)
+        pos_encoding = positional_encoding(position=num_patches, d_model=projection_dim // 2)
+        for l in range(len(list_labels)):
+            idx_label = np.where(label_slic == list_labels[l])
+            if len(idx_label[0]) > 0:
+                y, x = centroid(idx_label)
+                # Aprovecho el loop para adaptar los parches a un tamaño fijo
+                patch = np.zeros((projection_dim, 3))
+                temp_patch = np.array([imgs[i, y, x, :] for y, x in list(zip(idx_label[0], idx_label[1]))])
+                if len(temp_patch) > projection_dim:
+                    patch = np.delete(temp_patch, random.sample(range(len(temp_patch)), len(temp_patch) - projection_dim), axis=0)
+                else:
+                    patch[:len(temp_patch)] = temp_patch
+                patches_batch[i, l] = patch
+                positions_batch[i, l] = np.concatenate((pos_encoding[x], np.flip(pos_encoding[y])))
             else:
-                patch[:len(temp_patch)] = temp_patch
-            patches.append(patch)
-            positions.append(np.concatenate((pos_encoding[x], np.flip(pos_encoding[y]))))
+                # pues a veces SLICO tiene etiquetas sueltas sin asignar
+                patches_batch[i, l] = np.zeros((projection_dim, 3))
+                positions_batch[i, l] = np.zeros(projection_dim)
         # Tengo que rellenar con 0s tanto parches como posiciones
-        for empt in range(len(list_labels), max_labels):
-            patches.append(np.zeros((max_labels, 3)))
-            positions.append(np.zeros(max_labels))
-        patches_batch.append(np.array(patches))
-        positions_batch.append(np.array(positions))
-    return np.array(patches_batch), np.array(positions_batch)
+        for empt in range(len(list_labels), num_patches):
+            patches_batch[i, empt] = np.zeros((projection_dim, 3))
+            positions_batch[i, empt] = np.zeros(projection_dim)
+
+    return patches_batch, positions_batch
 
 
 def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units):
@@ -131,12 +134,12 @@ def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, trans
     model = keras.Model(inputs, logits)
     return model
 
-def SLICO_ViT(input_shape, num_classes, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units):
-    patches = layers.Input(shape=input_shape[1:], batch_size=input_shape[0], name="patches")
-    patches_reshape = tf.reshape(patches, [input_shape[0], input_shape[1], input_shape[2]*input_shape[3]])
+def SLICO_ViT(input_shape, num_classes, projection_dim, num_patches, transformer_layers, num_heads, transformer_units, mlp_head_units):
+    patches = layers.Input(shape=[num_patches, projection_dim, input_shape[-1]], batch_size=input_shape[0], name="patches")
+    patches_reshape = tf.reshape(patches, [input_shape[0], num_patches, projection_dim*input_shape[3]])
     projection = layers.Dense(units=projection_dim)(patches_reshape)
 
-    positions = layers.Input(shape=input_shape[1:-1], batch_size=input_shape[0], name="positions")
+    positions = layers.Input(shape=[num_patches, projection_dim], batch_size=input_shape[0], name="positions")
     encoded_patches = projection + positions
 
     # Transformer block

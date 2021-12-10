@@ -33,6 +33,7 @@ if __name__ == '__main__':
     tm = TrainingModel(nn=SLICO_ViT(input_shape=input_dims,
                                     num_classes=6,
                                     projection_dim=projection_dim,
+                                    num_patches=num_patches,
                                     transformer_layers=6,
                                     num_heads=4,
                                     transformer_units=[projection_dim, ],
@@ -64,7 +65,7 @@ if __name__ == '__main__':
         for batch_x, batch_y in tqdm(train, desc=f'Train_batch: {epoch}'):
             batch_x = tf.image.resize(batch_x, input_dims[1:3])
             patches, positions = SLICOprocess(batch_x.numpy(), region_size=patch_size, ruler=10., iterations=50,
-                                              max_labels=num_patches)
+                                              num_patches=num_patches, projection_dim=projection_dim)
             loss, lr = tm.train_step({'patches': patches, 'positions': positions}, batch_y, epoch)
             loss_train.append(loss)
         train_acc = tm.get_acc_categorical("train")
@@ -73,7 +74,7 @@ if __name__ == '__main__':
         for batch_x, batch_y in tqdm(test, desc=f'Test_batch: {epoch}'):
             batch_x = tf.image.resize(batch_x, input_dims[1:3])
             patches, positions = SLICOprocess(batch_x.numpy(), region_size=patch_size, ruler=10., iterations=50,
-                                              max_labels=num_patches)
+                                              num_patches=num_patches, projection_dim=projection_dim)
             loss_valid.append(tm.valid_step({'patches': patches, 'positions': positions}, batch_y))
         valid_acc = tm.get_acc_categorical("valid")
 
