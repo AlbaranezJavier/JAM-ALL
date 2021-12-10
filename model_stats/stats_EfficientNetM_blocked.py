@@ -22,14 +22,14 @@ if __name__ == '__main__':
                Metrics(p=1e-2, label=["Other", 5])]
     average = Metrics(p=1e-2, label=["Average", -1])
     # Net Variables
-    model = "EfficientNetV2M"
+    model = "EfficientNetV2M_block"
     epoch = 100  # <= number epoch trained
     specific_weights = "_cropped_v3_all_480x480"
     input_dims = (4, 480, 480, 3)
 
     model = ModelManager(nn=EfficientNetV2_M(image_size=480,
                                            num_classes=6,
-                                           trainable=True),
+                                           trainable=False),
                          weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                          epoch=epoch)
 

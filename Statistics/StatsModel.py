@@ -12,7 +12,7 @@ class TrainingStats:
     """
     Manage the metrics in training process
     """
-    def __init__(self, model_name, specific_weights, logs_name, start_epoch=None):
+    def __init__(self, model_name, specific_weights, logs_name=None, start_epoch=None):
         """
         :param mm: ModelManager
         :param dm: DataManager
@@ -37,8 +37,9 @@ class TrainingStats:
         self.data = self._data_struct()
         self._load()
         # Tensorboard
-        self.train_writer = tf.summary.create_file_writer(f'../Logs/Tensorboard/{logs_name}/train')
-        self.valid_writer = tf.summary.create_file_writer(f'../Logs/Tensorboard/{logs_name}/valid')
+        if logs_name is not None:
+            self.train_writer = tf.summary.create_file_writer(f'../Logs/Tensorboard/{logs_name}/train')
+            self.valid_writer = tf.summary.create_file_writer(f'../Logs/Tensorboard/{logs_name}/valid')
 
     def _path_logs(self):
         """

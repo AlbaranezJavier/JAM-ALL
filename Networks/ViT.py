@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import tensorflow_addons as tfa
+from vit_keras import vit
 
 
 def mlp(x, hidden_units, dropout_rate):
@@ -74,3 +75,14 @@ def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, trans
 
 def ViT_from_h5(path: str):
     return keras.models.load_model(path)
+
+def ViTB_keras_blocked(inputs_dim: tuple, num_classes: int) -> tf.keras.Model:
+    base_model = vit.vit_b32(image_size=inputs_dim[1],
+                             activation='linear',
+                             pretrained=True,
+                             include_top=False,
+                             pretrained_top=False)
+    inputs = layers.Input(inputs_dim[1:])
+    base_model.trainable = False
+    x = base_model(inputs)
+    return keras.Model(inputs, layers.Dense(num_classes)(x))
