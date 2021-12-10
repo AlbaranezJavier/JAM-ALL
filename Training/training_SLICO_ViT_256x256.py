@@ -30,13 +30,13 @@ if __name__ == '__main__':
     num_patches = (input_dims[1] // patch_size) ** 2
     lr = 1e-5
 
-    tm = TrainingModel(nn=locals()[model](input_shape=input_dims,
-                                          num_classes=6,
-                                          projection_dim=projection_dim,
-                                          transformer_layers=6,
-                                          num_heads=4,
-                                          transformer_units=[projection_dim, ],
-                                          mlp_head_units=[512]),
+    tm = TrainingModel(nn=SLICO_ViT(input_shape=input_dims,
+                                    num_classes=6,
+                                    projection_dim=projection_dim,
+                                    transformer_layers=6,
+                                    num_heads=4,
+                                    transformer_units=[projection_dim, ],
+                                    mlp_head_units=[512]),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
                        optimizer=AdamW(learning_rate=lr, weight_decay=1e-6),

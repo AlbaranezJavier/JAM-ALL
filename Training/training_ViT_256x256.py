@@ -26,19 +26,20 @@ if __name__ == '__main__':
     input_dims = (32, 256, 256, 3)
     patch_size = 16
     projection_dim = 256
+    lr = 1e-5
 
-    tm = TrainingModel(nn=locals()[model](input_dims[1:],
-                                          num_classes=6,
-                                          patch_size=patch_size,
-                                          num_patches=(input_dims[1] // patch_size) ** 2,
-                                          projection_dim=projection_dim,
-                                          transformer_layers=6,
-                                          num_heads=4,
-                                          transformer_units=[projection_dim, ],
-                                          mlp_head_units=[512]),
+    tm = TrainingModel(nn=ViT(input_dims[1:],
+                              num_classes=6,
+                              patch_size=patch_size,
+                              num_patches=(input_dims[1] // patch_size) ** 2,
+                              projection_dim=projection_dim,
+                              transformer_layers=6,
+                              num_heads=4,
+                              transformer_units=[projection_dim, ],
+                              mlp_head_units=[512]),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
-                       optimizer=AdamW(learning_rate=1e-5, weight_decay=1e-6),
+                       optimizer=AdamW(learning_rate=lr, weight_decay=1e-6),
                        schedules={},
                        loss_func="categorical_crossentropy_true",
                        metric_func="categorical_accuracy")
@@ -53,7 +54,7 @@ if __name__ == '__main__':
     # Statistics
     ts = TrainingStats(model_name=model + id_copy,
                        specific_weights=specific_weights,
-                       logs_tensorboard="ViT/cls/Raabin/72x72/1e-5/500",
+                       logs_tensorboard=f"{model}/cls/Raabin/batch_{input_dims[0]}/{input_dims[1]}x{input_dims[2]}/AdamW/{lr}/{end_epoch}",
                        start_epoch=start_epoch)
 
     for epoch in range(start_epoch + 1, end_epoch + 1):

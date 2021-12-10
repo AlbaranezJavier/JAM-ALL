@@ -133,7 +133,7 @@ def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, trans
 
 def SLICO_ViT(input_shape, num_classes, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units):
     patches = layers.Input(shape=input_shape[1:], batch_size=input_shape[0], name="patches")
-    patches_reshape = tf.reshape(patches, [32, 256, 256*3])
+    patches_reshape = tf.reshape(patches, [input_shape[0], input_shape[1], input_shape[2]*input_shape[3]])
     projection = layers.Dense(units=projection_dim)(patches_reshape)
 
     positions = layers.Input(shape=input_shape[1:-1], batch_size=input_shape[0], name="positions")
