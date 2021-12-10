@@ -1,5 +1,5 @@
 import time, sys
-from Networks.ModelManager import TrainingModel
+from Networks.ModelManager import TrainingModel, set_seeds
 from Data.DataManager import DataManager
 from Statistics.StatsModel import TrainingStats
 from tensorflow_addons.optimizers import AdamW
@@ -14,6 +14,7 @@ This script executes the training of the network.
 '''
 
 if __name__ == '__main__':
+    set_seeds()
     # Net Variables
     model = "EfficientNetV2M_block"
     start_epoch = 0
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     # Statistics
     ts = TrainingStats(model_name=model + id_copy,
                        specific_weights=specific_weights,
-                       logs_name=f"{model}_21k1k/cls/Raabin/batch_{input_dims[0]}/{input_dims[1]}x{input_dims[2]}/AdamW/{lr}/{end_epoch}",
+                       logs_tensorboard=f"{model}_21k1k/cls/Raabin/batch_{input_dims[0]}/{input_dims[1]}x{input_dims[2]}/AdamW/{lr}/{end_epoch}",
                        start_epoch=start_epoch)
 
     for epoch in range(start_epoch + 1, end_epoch + 1):

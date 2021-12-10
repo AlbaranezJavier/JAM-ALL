@@ -1,5 +1,5 @@
 import time, sys
-from Networks.ModelManager import TrainingModel
+from Networks.ModelManager import TrainingModel, set_seeds
 from Data.DataManager import DataManager
 from Statistics.StatsModel import TrainingStats
 from tensorflow_addons.optimizers import AdamW
@@ -14,6 +14,7 @@ This script executes the training of the network.
 '''
 
 if __name__ == '__main__':
+    set_seeds()
     # Net Variables
     model = "EfficientNetV2L"
     start_epoch = 0

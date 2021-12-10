@@ -66,11 +66,15 @@ class TrainingModel(ModelManager):
     # Metrics
     def get_acc_categorical(self, type):
         acc_metrics = self._train_acc_metric if type == "train" else self._valid_acc_metric
-        return float(acc_metrics.result() * 100.)
+        result = float(acc_metrics.result() * 100.)
+        acc_metrics.reset_state()
+        return result
 
     def get_acc_regresion(self, type):
         acc_metrics = self._train_acc_metric if type == "train" else self._valid_acc_metric
-        return float((1 - acc_metrics.result()) * 100.)
+        result = float(acc_metrics.result() * 100.)
+        acc_metrics.reset_state()
+        return result
 
     # Training and validation steps
     @tf.function
