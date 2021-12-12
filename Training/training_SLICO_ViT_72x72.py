@@ -3,7 +3,7 @@ from Networks.ModelManager import TrainingModel, set_seeds
 from Data.DataManager import DataManager
 from Statistics.StatsModel import TrainingStats
 from tensorflow_addons.optimizers import AdamW
-from tqdm import tqdm
+from Tools.progress_bar import pro_bar
 from Networks.ViT import SLICO_ViT, SLICOprocess
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -16,7 +16,7 @@ This script executes the training of the network.
 if __name__ == '__main__':
     set_seeds()
     # Net Variables
-    model = "SLICO_ViT"
+    model = "SLICO_ViT_S"
     start_epoch = 0
     id_copy = "_cropped_v3_all_72x72"
     end_epoch = 500
@@ -61,7 +61,10 @@ if __name__ == '__main__':
         # Train
         start_time = time.time()
         loss_train, lr = [], -1
-        for batch_x, batch_y in tqdm(train, desc=f'Train_batch: {epoch}'):
+        counter = 0
+        for batch_x, batch_y in train:
+            counter += 1
+            pro_bar(count=counter, total=len(train), status=f'Train_batch: {epoch}, {counter}/{len(train)}')
             batch_x = tf.image.resize(batch_x, input_dims[1:3])
             patches, positions = SLICOprocess(batch_x.numpy(), region_size=patch_size, ruler=10., iterations=50,
                                               num_patches=num_patches, projection_dim=projection_dim)
@@ -70,7 +73,10 @@ if __name__ == '__main__':
         train_acc = tm.get_acc_categorical("train")
         # Test
         loss_valid = []
-        for batch_x, batch_y in tqdm(test, desc=f'Test_batch: {epoch}'):
+        counter = 0
+        for batch_x, batch_y in test:
+            counter += 1
+            pro_bar(count=counter, total=len(test), status=f'Test_batch: {epoch}, {counter}/{len(test)}')
             batch_x = tf.image.resize(batch_x, input_dims[1:3])
             patches, positions = SLICOprocess(batch_x.numpy(), region_size=patch_size, ruler=10., iterations=50,
                                               num_patches=num_patches, projection_dim=projection_dim)
