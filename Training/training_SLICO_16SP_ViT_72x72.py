@@ -16,7 +16,7 @@ This script executes the training of the network.
 if __name__ == '__main__':
     set_seeds()
     # Net Variables
-    model = "SLICO_ViT_S"
+    model = "SLICO_ViT_S_16SP"
     start_epoch = 0
     id_copy = "_cropped_v3_all_72x72"
     end_epoch = 150
@@ -24,8 +24,8 @@ if __name__ == '__main__':
     min_acc = 90.0
     specific_weights = "" + id_copy
     input_dims = (32, 72, 72, 3)
-    patch_size = 6
-    projection_dim = 64
+    patch_size = 16
+    projection_dim = 256
     num_patches = (input_dims[1] // patch_size) ** 2
     lr = 1e-5
 
@@ -66,8 +66,9 @@ if __name__ == '__main__':
             counter += 1
             pro_bar(count=counter, total=len(train), status=f'Train_batch: {epoch}, {counter}/{len(train)}')
             batch_x = tf.image.resize(batch_x, input_dims[1:3])
-            patches, positions = SLICOprocess(batch_x.numpy(), region_size=patch_size, ruler=10., iterations=10,
-                                              num_patches=num_patches, projection_dim=projection_dim)
+            patches, positions = SLICOprocess(batch_x.numpy(), region_size=patch_size, ruler=10.,
+                                                           iterations=10,
+                                                           num_patches=num_patches, projection_dim=projection_dim)
             loss, lr = tm.train_step({'patches': patches, 'positions': positions}, batch_y, epoch)
             loss_train.append(loss)
         train_acc = tm.get_acc_categorical("train")
@@ -78,8 +79,9 @@ if __name__ == '__main__':
             counter += 1
             pro_bar(count=counter, total=len(test), status=f'Test_batch: {epoch}, {counter}/{len(test)}')
             batch_x = tf.image.resize(batch_x, input_dims[1:3])
-            patches, positions = SLICOprocess(batch_x.numpy(), region_size=patch_size, ruler=10., iterations=10,
-                                              num_patches=num_patches, projection_dim=projection_dim)
+            patches, positions = SLICOprocess(batch_x.numpy(), region_size=patch_size, ruler=10.,
+                                                           iterations=10,
+                                                           num_patches=num_patches, projection_dim=projection_dim)
             loss_valid.append(tm.valid_step({'patches': patches, 'positions': positions}, batch_y))
         valid_acc = tm.get_acc_categorical("valid")
 
@@ -88,4 +90,3 @@ if __name__ == '__main__':
         is_saved = tm.save_best(ts.data["best"], valid_acc, min_acc, epoch, end_epoch, save_weights)
         ts.update_values(epoch, is_saved, np.mean(loss_train), np.mean(loss_valid), train_acc, valid_acc, end_time, lr,
                          verbose=1)
-
