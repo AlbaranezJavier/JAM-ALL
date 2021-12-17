@@ -16,17 +16,17 @@ This script executes the training of the network.
 if __name__ == '__main__':
     set_seeds()
     # Net Variables
-    model = "SLICO_ViT_S_16SP"
+    model = "SLICO_ViT_S16_SP30_rgl"
     start_epoch = 0
     id_copy = "_cropped_v3_all_72x72"
-    end_epoch = 150
+    end_epoch = 75
     save_weights = True
     min_acc = 90.0
     specific_weights = "" + id_copy
     input_dims = (32, 72, 72, 3)
     patch_size = 16
     projection_dim = 256
-    num_patches = (input_dims[1] // patch_size) ** 2
+    num_patches = 30
     lr = 1e-5
 
     tm = TrainingModel(nn=SLICO_ViT(input_shape=input_dims,
@@ -39,7 +39,7 @@ if __name__ == '__main__':
                                     mlp_head_units=[2048, 1024]),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
-                       optimizer=AdamW(learning_rate=lr, weight_decay=1e-6),
+                       optimizer=AdamW(learning_rate=lr, weight_decay=1e-2),
                        schedules={},
                        loss_func="categorical_crossentropy_true",
                        metric_func="categorical_accuracy")
