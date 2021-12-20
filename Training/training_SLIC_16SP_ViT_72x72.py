@@ -4,7 +4,7 @@ from Data.DataManager import DataManager
 from Statistics.StatsModel import TrainingStats
 from tensorflow_addons.optimizers import AdamW
 from Tools.progress_bar import pro_bar
-from Networks.ViT import SLICO_ViT, SLICprocess
+from Networks.ViT import SP_ViT, SLICprocess
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
@@ -29,14 +29,14 @@ if __name__ == '__main__':
     num_patches = (input_dims[1] // patch_size) ** 2
     lr = 1e-5
 
-    tm = TrainingModel(nn=SLICO_ViT(input_shape=input_dims,
-                                    num_classes=6,
-                                    projection_dim=projection_dim,
-                                    num_patches=num_patches,
-                                    transformer_layers=8,
-                                    num_heads=4,
-                                    transformer_units=[projection_dim * 2, projection_dim, ],
-                                    mlp_head_units=[2048, 1024]),
+    tm = TrainingModel(nn=SP_ViT(input_shape=input_dims,
+                                 num_classes=6,
+                                 projection_dim=projection_dim,
+                                 num_patches=num_patches,
+                                 transformer_layers=8,
+                                 num_heads=4,
+                                 transformer_units=[projection_dim * 2, projection_dim, ],
+                                 mlp_head_units=[2048, 1024]),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
                        optimizer=AdamW(learning_rate=lr, weight_decay=1e-6),

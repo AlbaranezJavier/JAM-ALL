@@ -7,9 +7,9 @@ import cv2
 import random
 
 
-def mlp(x, hidden_units, dropout_rate):
+def mlp(x, hidden_units, dropout_rate, rgl):
   for units in hidden_units:
-    x = layers.Dense(units, activation=tf.nn.gelu)(x)
+    x = layers.Dense(units, activation=tf.nn.gelu, kernel_regularizer=rgl)(x)
     x = layers.Dropout(dropout_rate)(x)
   return x
 
@@ -32,10 +32,10 @@ class Patches(layers.Layer):
 
 # Patch encoding layer
 class PatchEncoder(layers.Layer):
-    def __init__(self, num_patches, projection_dim):
+    def __init__(self, num_patches, projection_dim, rgl):
         super(PatchEncoder, self).__init__()
         self.num_patches = num_patches
-        self.projection = layers.Dense(units=projection_dim)
+        self.projection = layers.Dense(units=projection_dim, kernel_regularizer=rgl)
         self.position_embedding = layers.Embedding(
             input_dim=num_patches, output_dim=projection_dim
         )
@@ -179,10 +179,10 @@ def SLICO_unfixed_num_patches(imgs: np.ndarray, region_size: int, ruler: float, 
     return np.array(patches_batch), np.array(positions_batch)
 
 
-def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units):
+def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units, rgl):
     inputs = layers.Input(shape=input_shape)
     patches = Patches(patch_size)(inputs)
-    encoded_patches = PatchEncoder(num_patches, projection_dim)(patches)
+    encoded_patches = PatchEncoder(num_patches, projection_dim, rgl=rgl)(patches)
 
     # Transformer block
     for _ in range(transformer_layers):
@@ -191,7 +191,7 @@ def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, trans
 
         x2 = layers.Add()([attention_output, encoded_patches])
         x3 = layers.LayerNormalization(epsilon=1e-6)(x2)
-        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1)
+        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1, rgl=rgl)
 
         encoded_patches = layers.Add()([x3, x2])
 
@@ -200,17 +200,17 @@ def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, trans
     representation = layers.Flatten()(representation)
     representation = layers.Dropout(0.5)(representation)
     # Add MLP
-    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
+    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5, rgl=rgl)
     # Classify
     logits = layers.Dense(num_classes)(features)
 
     model = keras.Model(inputs, logits)
     return model
 
-def SLICO_ViT(input_shape, num_classes, projection_dim, num_patches, transformer_layers, num_heads, transformer_units, mlp_head_units):
+def SP_ViT(input_shape, num_classes, projection_dim, num_patches, transformer_layers, num_heads, transformer_units, mlp_head_units, rgl):
     patches = layers.Input(shape=[num_patches, projection_dim, input_shape[-1]], batch_size=input_shape[0], name="patches")
     patches_reshape = tf.reshape(patches, [input_shape[0], num_patches, projection_dim*input_shape[3]])
-    projection = layers.Dense(units=projection_dim)(patches_reshape)
+    projection = layers.Dense(units=projection_dim, kernel_regularizer=rgl)(patches_reshape)
 
     positions = layers.Input(shape=[num_patches, projection_dim], batch_size=None, name="positions")
     encoded_patches = projection + positions
@@ -222,7 +222,7 @@ def SLICO_ViT(input_shape, num_classes, projection_dim, num_patches, transformer
 
         x2 = layers.Add()([attention_output, encoded_patches])
         x3 = layers.LayerNormalization(epsilon=1e-6)(x2)
-        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1)
+        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1, rgl=rgl)
 
         encoded_patches = layers.Add()([x3, x2])
 
@@ -231,9 +231,9 @@ def SLICO_ViT(input_shape, num_classes, projection_dim, num_patches, transformer
     representation = layers.Flatten()(representation)
     representation = layers.Dropout(0.5)(representation)
     # Add MLP
-    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
+    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5, rgl=rgl)
     # Classify
-    logits = layers.Dense(num_classes)(features)
+    logits = layers.Dense(num_classes, kernel_regularizer=rgl)(features)
 
     model = keras.Model([patches, positions], logits)
     return model

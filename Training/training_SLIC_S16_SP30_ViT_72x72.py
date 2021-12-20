@@ -1,10 +1,12 @@
 import time, sys
+sys.path.append(r"D:\Work\Repositorios\JAM-ALL")
 from Networks.ModelManager import TrainingModel, set_seeds
 from Data.DataManager import DataManager
 from Statistics.StatsModel import TrainingStats
 from tensorflow_addons.optimizers import AdamW
+from tensorflow.keras.optimizers import Adam
 from Tools.progress_bar import pro_bar
-from Networks.ViT import SLICO_ViT, SLICprocess
+from Networks.ViT import SP_ViT, SLICprocess
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
@@ -16,7 +18,7 @@ This script executes the training of the network.
 if __name__ == '__main__':
     set_seeds()
     # Net Variables
-    model = "SLIC_ViT_S16_SP30_rgl"
+    model = "SLIC_ViT_S16_SP30"
     start_epoch = 0
     id_copy = "_cropped_v3_all_72x72"
     end_epoch = 75
@@ -27,19 +29,22 @@ if __name__ == '__main__':
     patch_size = 16
     projection_dim = 256
     num_patches = 30
-    lr = 1e-5
+    lr = 1e-5 # 1e-5
+    krgl = 1e-1 # 1e-3
+    wd = 1e-6 # 1e-6
 
-    tm = TrainingModel(nn=SLICO_ViT(input_shape=input_dims,
-                                    num_classes=6,
-                                    projection_dim=projection_dim,
-                                    num_patches=num_patches,
-                                    transformer_layers=8,
-                                    num_heads=4,
-                                    transformer_units=[projection_dim * 2, projection_dim, ],
-                                    mlp_head_units=[2048, 1024]),
+    tm = TrainingModel(nn=SP_ViT(input_shape=input_dims,
+                                 num_classes=6,
+                                 projection_dim=projection_dim,
+                                 num_patches=num_patches,
+                                 transformer_layers=8,
+                                 num_heads=4,
+                                 transformer_units=[projection_dim * 2, projection_dim, ],
+                                 mlp_head_units=[2048, 1024],
+                                 rgl=tf.keras.regularizers.L2(krgl)),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
-                       optimizer=AdamW(learning_rate=lr, weight_decay=1e-2),
+                       optimizer=AdamW(learning_rate=lr, weight_decay=wd),
                        schedules={},
                        loss_func="categorical_crossentropy_true",
                        metric_func="categorical_accuracy")
@@ -54,7 +59,7 @@ if __name__ == '__main__':
     # Statistics
     ts = TrainingStats(model_name=model + id_copy,
                        specific_weights=specific_weights,
-                       logs_tensorboard=f"{model}/cls/Raabin/batch_{input_dims[0]}/{input_dims[1]}x{input_dims[2]}/AdamW/{lr}/{end_epoch}",
+                       logs_tensorboard=f"{model}/cls/Raabin/batch_{input_dims[0]}/{input_dims[1]}x{input_dims[2]}/krgl {krgl}/AdamW/weight_decay {wd}/lr {lr}/{end_epoch}",
                        start_epoch=start_epoch)
 
     for epoch in range(start_epoch + 1, end_epoch + 1):

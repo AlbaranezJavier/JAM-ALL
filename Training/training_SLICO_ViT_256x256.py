@@ -3,7 +3,7 @@ from Networks.ModelManager import TrainingModel, set_seeds
 from Data.DataManager import DataManager
 from Statistics.StatsModel import TrainingStats
 from tensorflow_addons.optimizers import AdamW
-from Networks.ViT import SLICO_ViT, SLICOprocess
+from Networks.ViT import SP_ViT, SLICOprocess
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -30,14 +30,14 @@ if __name__ == '__main__':
     num_patches = (input_dims[1] // patch_size) ** 2
     lr = 1e-5
 
-    tm = TrainingModel(nn=SLICO_ViT(input_shape=input_dims,
-                                    num_classes=6,
-                                    projection_dim=projection_dim,
-                                    num_patches=num_patches,
-                                    transformer_layers=6,
-                                    num_heads=4,
-                                    transformer_units=[projection_dim, ],
-                                    mlp_head_units=[512]),
+    tm = TrainingModel(nn=SP_ViT(input_shape=input_dims,
+                                 num_classes=6,
+                                 projection_dim=projection_dim,
+                                 num_patches=num_patches,
+                                 transformer_layers=6,
+                                 num_heads=4,
+                                 transformer_units=[projection_dim, ],
+                                 mlp_head_units=[512]),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
                        optimizer=AdamW(learning_rate=lr, weight_decay=1e-6),

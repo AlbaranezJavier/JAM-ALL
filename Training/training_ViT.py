@@ -1,4 +1,5 @@
 import time, sys
+sys.path.append(r"D:\Work\Repositorios\JAM-ALL")
 from Networks.ModelManager import TrainingModel, set_seeds
 from Data.DataManager import DataManager
 from Statistics.StatsModel import TrainingStats
@@ -16,7 +17,7 @@ This script executes the training of the network.
 if __name__ == '__main__':
     set_seeds()
     # Net Variables
-    model = "ViT_rgl"
+    model = "ViT_krgl3"
     start_epoch = 0
     id_copy = "_cropped_v3_all_72x72"
     end_epoch = 75
@@ -36,10 +37,11 @@ if __name__ == '__main__':
                               transformer_layers=8,
                               num_heads=4,
                               transformer_units=[projection_dim * 2, projection_dim, ],
-                              mlp_head_units=[2048, 1024]),
+                              mlp_head_units=[2048, 1024],
+                              rgl=tf.keras.regularizers.L2(1e-3)),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
-                       optimizer=AdamW(learning_rate=lr, weight_decay=1e-2),
+                       optimizer=AdamW(learning_rate=lr, weight_decay=1e-6),
                        schedules={},
                        loss_func="categorical_crossentropy_true",
                        metric_func="categorical_accuracy")
