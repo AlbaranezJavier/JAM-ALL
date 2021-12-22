@@ -27,7 +27,7 @@ if __name__ == '__main__':
     specific_weights = "" + id_copy
     input_dims = (32, 72, 72, 3)
     patch_size = 16
-    projection_dim = 50
+    projection_dim = 256
     lr = 1e-5  # 1e-5
     wd = 1e-6  # 1e-6
 

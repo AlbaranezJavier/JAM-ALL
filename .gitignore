@@ -6,3 +6,4 @@ Networks/__pycache__/SNet.cpython-38.pyc
 /Weights/
 *.iml
 *.pyc
+/venv/

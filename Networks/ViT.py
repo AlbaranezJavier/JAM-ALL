@@ -3,16 +3,17 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import tensorflow_addons as tfa
+import tensorflow_transform as tft
 import cv2
 import random
 from sklearn.decomposition import PCA
 
 
 def mlp(x, hidden_units, dropout_rate):
-  for units in hidden_units:
-    x = layers.Dense(units, activation=tf.nn.gelu)(x)
-    x = layers.Dropout(dropout_rate)(x)
-  return x
+    for units in hidden_units:
+        x = layers.Dense(units, activation=tf.nn.gelu)(x)
+        x = layers.Dropout(dropout_rate)(x)
+    return x
 
 
 class Patches(layers.Layer):
@@ -31,6 +32,7 @@ class Patches(layers.Layer):
         patches = tf.reshape(patches, [batch_size, -1, patch_dims])
         return patches
 
+
 # Patch encoding layer
 class PatchEncoder(layers.Layer):
     def __init__(self, num_patches, projection_dim):
@@ -46,33 +48,40 @@ class PatchEncoder(layers.Layer):
         encoded = self.projection(patch) + self.position_embedding(positions)
         return encoded
 
+
 def centroid(idx_array: np.ndarray) -> tuple:
     length = len(idx_array[0])
-    return np.sum(idx_array[0])//length, np.sum(idx_array[1])//length
+    return np.sum(idx_array[0]) // length, np.sum(idx_array[1]) // length
+
 
 def get_angles(pos, i, d_model):
-  angle_rates = 1 / np.power(10000, (2 * (i//2)) / np.float32(d_model))
-  return pos * angle_rates
+    angle_rates = 1 / np.power(10000, (2 * (i // 2)) / np.float32(d_model))
+    return pos * angle_rates
+
 
 def positional_encoding(position, d_model):
-  angle_rads = get_angles(np.arange(position)[:, np.newaxis],
-                          np.arange(d_model)[np.newaxis, :],
-                          d_model)
+    angle_rads = get_angles(np.arange(position)[:, np.newaxis],
+                            np.arange(d_model)[np.newaxis, :],
+                            d_model)
 
-  # apply sin to even indices in the array; 2i
-  angle_rads[:, 0::2] = np.sin(angle_rads[:, 0::2])
+    # apply sin to even indices in the array; 2i
+    angle_rads[:, 0::2] = np.sin(angle_rads[:, 0::2])
 
-  # apply cos to odd indices in the array; 2i+1
-  angle_rads[:, 1::2] = np.cos(angle_rads[:, 1::2])
+    # apply cos to odd indices in the array; 2i+1
+    angle_rads[:, 1::2] = np.cos(angle_rads[:, 1::2])
 
-  pos_encoding = angle_rads[np.newaxis, ...]
+    pos_encoding = angle_rads[np.newaxis, ...]
 
-  return pos_encoding.astype(np.float32)[0]
+    return pos_encoding.astype(np.float32)[0]
 
-def SLICOprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: int, num_patches: int, projection_dim: int) -> tuple:
-    patches_batch, positions_batch = np.zeros((len(imgs), num_patches, projection_dim, 3)), np.zeros((len(imgs), num_patches, projection_dim))
+
+def SLICOprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: int, num_patches: int,
+                 projection_dim: int) -> tuple:
+    patches_batch, positions_batch = np.zeros((len(imgs), num_patches, projection_dim, 3)), np.zeros(
+        (len(imgs), num_patches, projection_dim))
     for i in range(len(imgs)):
-        slic = cv2.ximgproc.createSuperpixelSLIC(imgs[i]*255., algorithm=cv2.ximgproc.SLICO, region_size=region_size, ruler=ruler)
+        slic = cv2.ximgproc.createSuperpixelSLIC(imgs[i] * 255., algorithm=cv2.ximgproc.SLICO, region_size=region_size,
+                                                 ruler=ruler)
         slic.iterate(iterations)
         label_slic = slic.getLabels()
         # puede haber más parches de los esperados
@@ -90,7 +99,8 @@ def SLICOprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: i
                 patch = np.zeros((projection_dim, 3))
                 temp_patch = np.array([imgs[i, y, x, :] for y, x in list(zip(idx_label[0], idx_label[1]))])
                 if len(temp_patch) > projection_dim:
-                    patch = np.delete(temp_patch, random.sample(range(len(temp_patch)), len(temp_patch) - projection_dim), axis=0)
+                    patch = np.delete(temp_patch,
+                                      random.sample(range(len(temp_patch)), len(temp_patch) - projection_dim), axis=0)
                 else:
                     patch[:len(temp_patch)] = temp_patch
                 patches_batch[i, l] = patch
@@ -106,10 +116,14 @@ def SLICOprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: i
 
     return patches_batch, positions_batch
 
-def SLICprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: int, num_patches: int, projection_dim: int) -> tuple:
-    patches_batch, positions_batch = np.zeros((len(imgs), num_patches, projection_dim, 3)), np.zeros((len(imgs), num_patches, projection_dim))
+
+def SLICprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: int, num_patches: int,
+                projection_dim: int) -> tuple:
+    patches_batch, positions_batch = np.zeros((len(imgs), num_patches, projection_dim, 3)), np.zeros(
+        (len(imgs), num_patches, projection_dim))
     for i in range(len(imgs)):
-        slic = cv2.ximgproc.createSuperpixelSLIC(imgs[i]*255., algorithm=cv2.ximgproc.SLIC, region_size=region_size, ruler=ruler)
+        slic = cv2.ximgproc.createSuperpixelSLIC(imgs[i] * 255., algorithm=cv2.ximgproc.SLIC, region_size=region_size,
+                                                 ruler=ruler)
         slic.iterate(iterations)
         label_slic = slic.getLabels()
         # puede haber más parches de los esperados
@@ -127,7 +141,8 @@ def SLICprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: in
                 patch = np.zeros((projection_dim, 3))
                 temp_patch = np.array([imgs[i, y, x, :] for y, x in list(zip(idx_label[0], idx_label[1]))])
                 if len(temp_patch) > projection_dim:
-                    patch = np.delete(temp_patch, random.sample(range(len(temp_patch)), len(temp_patch) - projection_dim), axis=0)
+                    patch = np.delete(temp_patch,
+                                      random.sample(range(len(temp_patch)), len(temp_patch) - projection_dim), axis=0)
                 else:
                     patch[:len(temp_patch)] = temp_patch
                 patches_batch[i, l] = patch
@@ -143,10 +158,13 @@ def SLICprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: in
 
     return patches_batch, positions_batch
 
-def SLIC_unfixed_num_patches(imgs: np.ndarray, region_size: int, ruler: float, iterations: int, projection_dim: int) -> tuple:
+
+def SLIC_unfixed_num_patches(imgs: np.ndarray, region_size: int, ruler: float, iterations: int,
+                             projection_dim: int) -> tuple:
     patches_batch, positions_batch = [], []
     for i in range(len(imgs)):
-        slic = cv2.ximgproc.createSuperpixelSLIC(imgs[i]*255., algorithm=cv2.ximgproc.SLIC, region_size=region_size, ruler=ruler)
+        slic = cv2.ximgproc.createSuperpixelSLIC(imgs[i] * 255., algorithm=cv2.ximgproc.SLIC, region_size=region_size,
+                                                 ruler=ruler)
         slic.iterate(iterations)
         label_slic = slic.getLabels()
         # puede haber más parches de los esperados
@@ -172,21 +190,19 @@ def SLIC_unfixed_num_patches(imgs: np.ndarray, region_size: int, ruler: float, i
         padded_patches = np.zeros((len(patches), biggest, 3))
         for i in range(len(patches)):
             padded_patches[i, :len(patches[i]), :] = patches[i]
-        # me quedo con los componentes más relevantes, PCA
-        pca = PCA(n_components=np.min(padded_patches.shape[:2]))
-        pca_result = pca.fit_transform(
-            np.reshape(padded_patches, (padded_patches.shape[0], padded_patches.shape[1] * padded_patches.shape[2])))
-        patches = np.zeros(shape=(pca_result.shape[0], projection_dim))
-        patches[:, :pca_result.shape[1]] = pca_result
 
-        patches_batch.append(patches)
+        _, patches, _ = cv2.PCACompute2(np.reshape(padded_patches, (padded_patches.shape[0], padded_patches.shape[1] * padded_patches.shape[2])), mean=None)
+
+        patches_batch.append(patches[:, :projection_dim])
         positions_batch.append(positions)
 
     return np.array(patches_batch), np.array(positions_batch)
 
+
 def SP_unfixed_ViT(num_classes, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units):
     patches = layers.Input(shape=[None, projection_dim, 1], batch_size=None, name="patches")
-    patches_reshape = tf.reshape(patches, [tf.shape(patches)[0], tf.shape(patches)[1], tf.shape(patches)[2]*tf.shape(patches)[3]])
+    patches_reshape = tf.reshape(patches, [tf.shape(patches)[0], tf.shape(patches)[1],
+                                           tf.shape(patches)[2] * tf.shape(patches)[3]])
     projection = layers.Dense(units=projection_dim)(patches_reshape)
 
     positions = layers.Input(shape=[None, projection_dim], batch_size=None, name="positions")
@@ -216,7 +232,8 @@ def SP_unfixed_ViT(num_classes, projection_dim, transformer_layers, num_heads, t
     return model
 
 
-def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units):
+def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, transformer_layers, num_heads,
+        transformer_units, mlp_head_units):
     inputs = layers.Input(shape=input_shape)
     patches = Patches(patch_size)(inputs)
     encoded_patches = PatchEncoder(num_patches, projection_dim)(patches)
@@ -244,9 +261,12 @@ def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, trans
     model = keras.Model(inputs, logits)
     return model
 
-def SP_ViT(input_shape, num_classes, projection_dim, num_patches, transformer_layers, num_heads, transformer_units, mlp_head_units):
-    patches = layers.Input(shape=[num_patches, projection_dim, input_shape[-1]], batch_size=input_shape[0], name="patches")
-    patches_reshape = tf.reshape(patches, [input_shape[0], num_patches, projection_dim*input_shape[3]])
+
+def SP_ViT(input_shape, num_classes, projection_dim, num_patches, transformer_layers, num_heads, transformer_units,
+           mlp_head_units):
+    patches = layers.Input(shape=[num_patches, projection_dim, input_shape[-1]], batch_size=input_shape[0],
+                           name="patches")
+    patches_reshape = tf.reshape(patches, [input_shape[0], num_patches, projection_dim * input_shape[3]])
     projection = layers.Dense(units=projection_dim)(patches_reshape)
 
     positions = layers.Input(shape=[num_patches, projection_dim], batch_size=None, name="positions")
