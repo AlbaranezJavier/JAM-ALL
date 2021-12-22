@@ -5,11 +5,12 @@ from tensorflow.keras import layers
 import tensorflow_addons as tfa
 import cv2
 import random
+from sklearn.decomposition import PCA
 
 
-def mlp(x, hidden_units, dropout_rate, rgl):
+def mlp(x, hidden_units, dropout_rate):
   for units in hidden_units:
-    x = layers.Dense(units, activation=tf.nn.gelu, kernel_regularizer=rgl)(x)
+    x = layers.Dense(units, activation=tf.nn.gelu)(x)
     x = layers.Dropout(dropout_rate)(x)
   return x
 
@@ -32,10 +33,10 @@ class Patches(layers.Layer):
 
 # Patch encoding layer
 class PatchEncoder(layers.Layer):
-    def __init__(self, num_patches, projection_dim, rgl):
+    def __init__(self, num_patches, projection_dim):
         super(PatchEncoder, self).__init__()
         self.num_patches = num_patches
-        self.projection = layers.Dense(units=projection_dim, kernel_regularizer=rgl)
+        self.projection = layers.Dense(units=projection_dim)
         self.position_embedding = layers.Embedding(
             input_dim=num_patches, output_dim=projection_dim
         )
@@ -142,17 +143,15 @@ def SLICprocess(imgs: np.ndarray, region_size: int, ruler: float, iterations: in
 
     return patches_batch, positions_batch
 
-def SLICO_unfixed_num_patches(imgs: np.ndarray, region_size: int, ruler: float, iterations: int, num_patches: int, projection_dim: int) -> tuple:
+def SLIC_unfixed_num_patches(imgs: np.ndarray, region_size: int, ruler: float, iterations: int, projection_dim: int) -> tuple:
     patches_batch, positions_batch = [], []
     for i in range(len(imgs)):
-        slic = cv2.ximgproc.createSuperpixelSLIC(imgs[i]*255., algorithm=cv2.ximgproc.SLICO, region_size=region_size, ruler=ruler)
+        slic = cv2.ximgproc.createSuperpixelSLIC(imgs[i]*255., algorithm=cv2.ximgproc.SLIC, region_size=region_size, ruler=ruler)
         slic.iterate(iterations)
         label_slic = slic.getLabels()
         # puede haber más parches de los esperados
         num_labels = np.max(label_slic)
         list_labels = np.array(range(num_labels))
-        if num_labels > num_patches:
-            list_labels = np.delete(list_labels, random.sample(range(num_labels), num_labels - num_patches))
         # codifica las posiciones (x,y) y obtiene los parches
         pos_encoding = positional_encoding(position=np.max(label_slic.shape), d_model=projection_dim // 2)
         patches, positions = [], []
@@ -160,29 +159,38 @@ def SLICO_unfixed_num_patches(imgs: np.ndarray, region_size: int, ruler: float, 
             idx_label = np.where(label_slic == list_labels[l])
             if len(idx_label[0]) > 0:
                 y, x = centroid(idx_label)
-                # Aprovecho el loop para adaptar los parches a un tamaño fijo
-                patch = np.zeros((projection_dim, 3))
-                temp_patch = np.array([imgs[i, y, x, :] for y, x in list(zip(idx_label[0], idx_label[1]))])
-                if len(temp_patch) > projection_dim:
-                    patch = np.delete(temp_patch, random.sample(range(len(temp_patch)), len(temp_patch) - projection_dim), axis=0)
-                else:
-                    patch[:len(temp_patch)] = temp_patch
-                patches.append(list(patch))
+                patch = [imgs[i, y, x, :] for y, x in list(zip(idx_label[0], idx_label[1]))]
+                patches.append(np.array(patch))
                 positions.append(list(np.concatenate((pos_encoding[x], np.flip(pos_encoding[y])))))
             else:
                 # pues a veces SLICO tiene etiquetas sueltas sin asignar
                 patches.append(list(np.zeros((projection_dim, 3))))
                 positions.append(list(np.zeros(projection_dim)))
+        biggest = 0
+        for p in patches:
+            biggest = len(p) if len(p) > biggest else biggest
+        padded_patches = np.zeros((len(patches), biggest, 3))
+        for i in range(len(patches)):
+            padded_patches[i, :len(patches[i]), :] = patches[i]
+        # me quedo con los componentes más relevantes, PCA
+        pca = PCA(n_components=np.min(padded_patches.shape[:2]))
+        pca_result = pca.fit_transform(
+            np.reshape(padded_patches, (padded_patches.shape[0], padded_patches.shape[1] * padded_patches.shape[2])))
+        patches = np.zeros(shape=(pca_result.shape[0], projection_dim))
+        patches[:, :pca_result.shape[1]] = pca_result
+
         patches_batch.append(patches)
         positions_batch.append(positions)
 
     return np.array(patches_batch), np.array(positions_batch)
 
+def SP_unfixed_ViT(num_classes, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units):
+    patches = layers.Input(shape=[None, projection_dim, 1], batch_size=None, name="patches")
+    patches_reshape = tf.reshape(patches, [tf.shape(patches)[0], tf.shape(patches)[1], tf.shape(patches)[2]*tf.shape(patches)[3]])
+    projection = layers.Dense(units=projection_dim)(patches_reshape)
 
-def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units, rgl):
-    inputs = layers.Input(shape=input_shape)
-    patches = Patches(patch_size)(inputs)
-    encoded_patches = PatchEncoder(num_patches, projection_dim, rgl=rgl)(patches)
+    positions = layers.Input(shape=[None, projection_dim], batch_size=None, name="positions")
+    encoded_patches = projection + positions
 
     # Transformer block
     for _ in range(transformer_layers):
@@ -191,7 +199,36 @@ def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, trans
 
         x2 = layers.Add()([attention_output, encoded_patches])
         x3 = layers.LayerNormalization(epsilon=1e-6)(x2)
-        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1, rgl=rgl)
+        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1)
+
+        encoded_patches = layers.Add()([x3, x2])
+
+    # [batch_size, projection_dim] tensor
+    representation = layers.LayerNormalization(epsilon=1e-6)(encoded_patches)
+    representation = layers.Lambda(lambda x: tf.math.reduce_sum(x, axis=1))(representation)
+    representation = layers.Dropout(0.5)(representation)
+    # Add MLP
+    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
+    # Classify
+    logits = layers.Dense(num_classes)(features)
+
+    model = keras.Model([patches, positions], logits)
+    return model
+
+
+def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, transformer_layers, num_heads, transformer_units, mlp_head_units):
+    inputs = layers.Input(shape=input_shape)
+    patches = Patches(patch_size)(inputs)
+    encoded_patches = PatchEncoder(num_patches, projection_dim)(patches)
+
+    # Transformer block
+    for _ in range(transformer_layers):
+        x1 = layers.LayerNormalization(epsilon=1e-6)(encoded_patches)
+        attention_output = layers.MultiHeadAttention(num_heads, key_dim=projection_dim, dropout=0.1)(x1, x1)
+
+        x2 = layers.Add()([attention_output, encoded_patches])
+        x3 = layers.LayerNormalization(epsilon=1e-6)(x2)
+        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1)
 
         encoded_patches = layers.Add()([x3, x2])
 
@@ -200,17 +237,17 @@ def ViT(input_shape, num_classes, patch_size, num_patches, projection_dim, trans
     representation = layers.Flatten()(representation)
     representation = layers.Dropout(0.5)(representation)
     # Add MLP
-    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5, rgl=rgl)
+    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
     # Classify
     logits = layers.Dense(num_classes)(features)
 
     model = keras.Model(inputs, logits)
     return model
 
-def SP_ViT(input_shape, num_classes, projection_dim, num_patches, transformer_layers, num_heads, transformer_units, mlp_head_units, rgl):
+def SP_ViT(input_shape, num_classes, projection_dim, num_patches, transformer_layers, num_heads, transformer_units, mlp_head_units):
     patches = layers.Input(shape=[num_patches, projection_dim, input_shape[-1]], batch_size=input_shape[0], name="patches")
     patches_reshape = tf.reshape(patches, [input_shape[0], num_patches, projection_dim*input_shape[3]])
-    projection = layers.Dense(units=projection_dim, kernel_regularizer=rgl)(patches_reshape)
+    projection = layers.Dense(units=projection_dim)(patches_reshape)
 
     positions = layers.Input(shape=[num_patches, projection_dim], batch_size=None, name="positions")
     encoded_patches = projection + positions
@@ -222,7 +259,7 @@ def SP_ViT(input_shape, num_classes, projection_dim, num_patches, transformer_la
 
         x2 = layers.Add()([attention_output, encoded_patches])
         x3 = layers.LayerNormalization(epsilon=1e-6)(x2)
-        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1, rgl=rgl)
+        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1)
 
         encoded_patches = layers.Add()([x3, x2])
 
@@ -231,12 +268,13 @@ def SP_ViT(input_shape, num_classes, projection_dim, num_patches, transformer_la
     representation = layers.Flatten()(representation)
     representation = layers.Dropout(0.5)(representation)
     # Add MLP
-    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5, rgl=rgl)
+    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
     # Classify
-    logits = layers.Dense(num_classes, kernel_regularizer=rgl)(features)
+    logits = layers.Dense(num_classes)(features)
 
     model = keras.Model([patches, positions], logits)
     return model
+
 
 def ViT_from_h5(path: str):
     return keras.models.load_model(path)

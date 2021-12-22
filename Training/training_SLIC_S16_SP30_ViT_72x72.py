@@ -4,7 +4,6 @@ from Networks.ModelManager import TrainingModel, set_seeds
 from Data.DataManager import DataManager
 from Statistics.StatsModel import TrainingStats
 from tensorflow_addons.optimizers import AdamW
-from tensorflow.keras.optimizers import Adam
 from Tools.progress_bar import pro_bar
 from Networks.ViT import SP_ViT, SLICprocess
 import matplotlib.pyplot as plt
@@ -30,7 +29,6 @@ if __name__ == '__main__':
     projection_dim = 256
     num_patches = 30
     lr = 1e-5 # 1e-5
-    krgl = 1e-1 # 1e-3
     wd = 1e-6 # 1e-6
 
     tm = TrainingModel(nn=SP_ViT(input_shape=input_dims,
@@ -40,8 +38,7 @@ if __name__ == '__main__':
                                  transformer_layers=8,
                                  num_heads=4,
                                  transformer_units=[projection_dim * 2, projection_dim, ],
-                                 mlp_head_units=[2048, 1024],
-                                 rgl=tf.keras.regularizers.L2(krgl)),
+                                 mlp_head_units=[2048, 1024]),
                        weights_path=f'../Weights/{model}/{specific_weights}_epoch',
                        start_epoch=start_epoch,
                        optimizer=AdamW(learning_rate=lr, weight_decay=wd),
@@ -59,7 +56,7 @@ if __name__ == '__main__':
     # Statistics
     ts = TrainingStats(model_name=model + id_copy,
                        specific_weights=specific_weights,
-                       logs_tensorboard=f"{model}/cls/Raabin/batch_{input_dims[0]}/{input_dims[1]}x{input_dims[2]}/krgl {krgl}/AdamW/weight_decay {wd}/lr {lr}/{end_epoch}",
+                       logs_tensorboard=f"{model}/cls/Raabin/batch_{input_dims[0]}/{input_dims[1]}x{input_dims[2]}/wo_krgl/AdamW/weight_decay {wd}/lr {lr}/{end_epoch}",
                        start_epoch=start_epoch)
 
     for epoch in range(start_epoch + 1, end_epoch + 1):
